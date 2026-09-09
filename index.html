@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Dungeon Chronicles — 2D MMORPG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" width="960" height="640"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
+  <div class="stat">💎 <span id="mp">50</span>/<span id="mpMax">50</span></div>
+  <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
+  <div class="stat">💰 <span id="gold">0</span></div>
+  <div class="stat">📍 <span id="loc">Город</span></div>
+</div>
+
+<!-- Панель действий -->
+<div id="actions">
+  <button onclick="Game.openInventory()">🎒 Инвентарь (I)</button>
+  <button onclick="Game.openStorage()">📦 Хранилище</button>
+  <button onclick="Game.openQuests()">📜 Квесты (Q)</button>
+</div>
+
+<!-- Диалоговое окно -->
+<div id="dialog" class="panel hidden">
+  <div id="dialogTitle">NPC</div>
+  <div id="dialogText"></div>
+  <div id="dialogButtons"></div>
+</div>
+
+<!-- Магазин -->
+<div id="shop" class="panel hidden">
+  <h2>🏪 Магазин</h2>
+  <div id="shopList"></div>
+  <button onclick="Game.closePanel('shop')">Закрыть</button>
+</div>
+
+<!-- Инвентарь -->
+<div id="inventory" class="panel hidden">
+  <h2>🎒 Инвентарь</h2>
+  <div id="invList"></div>
+  <button onclick="Game.closePanel('inventory')">Закрыть</button>
+</div>
+
+<!-- Хранилище -->
+<div id="storage" class="panel hidden">
+  <h2>📦 Хранилище (в городе)</h2>
+  <div id="storList"></div>
+  <button onclick="Game.closePanel('storage')">Закрыть</button>
+</div>
+
+<!-- Квесты -->
+<div id="quests" class="panel hidden">
+  <h2>📜 Квесты</h2>
+  <div id="questList"></div>
+  <button onclick="Game.closePanel('quests')">Закрыть</button>
+</div>
+
+<!-- Экран смерти -->
+<div id="death" class="panel hidden">
+  <h2>💀 Вы погибли</h2>
+  <p>Телепортация в город...</p>
+  <button onclick="Game.respawn()">Возродиться</button>
+</div>
+
+<!-- Подсказка -->
+<div id="hint" class="hidden"></div>
+
+<script src="game.js"></script>
+</body>
+</html>
