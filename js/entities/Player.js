@@ -110,12 +110,15 @@ class Player {
     useItem(itemId) {
         const itemData = CONSTANTS.ITEMS[itemId];
         if (!itemData) return false;
+
         if (itemData.type === 'consumable') {
             if (itemData.heal) this.hp = Math.min(this.maxHp, this.hp + itemData.heal);
             if (itemData.mp) this.mp = Math.min(this.maxMp, this.mp + itemData.mp);
             this.removeItem(itemId, 1);
             return true;
-        } else if (itemData.type === 'weapon' || itemData.type === 'armor') {
+        }
+        // === ИСПРАВЛЕНО: Проверяем все типы экипировки ===
+        else if (['weapon', 'helmet', 'chest', 'legs', 'boots', 'ring'].includes(itemData.type)) {
             this.equipItem(itemId);
             return true;
         }
@@ -151,12 +154,12 @@ class Player {
         if (dy > 0) this.direction = 'down';
         if (dy < 0) this.direction = 'up';
 
-        const newX = this.x + dx * (this.speed / CONSTANTS.PLAYER_SPEED);
-        const newY = this.y + dy * (this.speed / CONSTANTS.PLAYER_SPEED);
+        // === ИСПРАВЛЕНО: Правильная формула скорости ===
+        const newX = this.x + dx * this.speed;
+        const newY = this.y + dy * this.speed;
         const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
         const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
-        // === ИСПРАВЛЕНО: Проверяем границы карты ===
         if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
             if (map[tileY] && map[tileY][tileX] !== 1 && map[tileY][tileX] !== 7) {
                 this.x = newX;
