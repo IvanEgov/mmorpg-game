@@ -12,12 +12,68 @@
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
         <div class="stat">💰 <span id="gold">50</span></div>
+        <div class="stat" style="margin-left: auto; color: #aaa; font-size: 14px;">
+            [I] Инвентарь | [C] Характеристики | [K] Навыки
+        </div>
     </div>
 
-    <!-- Подключаем скрипты строго в этом порядке! -->
+    <!-- Панель Инвентаря -->
+    <div id="panel-inventory" class="game-panel hidden">
+        <h2>🎒 Инвентарь</h2>
+        <div id="inventory-list" class="list-container"></div>
+        <button class="btn-close" onclick="Game.ui.toggle('panel-inventory')">Закрыть (Esc)</button>
+    </div>
+
+    <!-- Панель Характеристик -->
+    <div id="panel-stats" class="game-panel hidden">
+        <h2>📊 Характеристики <span style="color: #f1c40f; font-size: 16px;">(Очков: <span id="stat-points">0</span>)</span></h2>
+        
+        <div class="stats-grid">
+            <div class="stat-row">
+                <span>💪 Сила (Атака)</span>
+                <span id="stat-str">0</span>
+                <button onclick="Game.ui.allocateStat('str')">+</button>
+            </div>
+            <div class="stat-row">
+                <span>💨 Ловкость (Скорость)</span>
+                <span id="stat-agi">0</span>
+                <button onclick="Game.ui.allocateStat('agi')">+</button>
+            </div>
+            <div class="stat-row">
+                <span>🧠 Интеллект (Мана)</span>
+                <span id="stat-int">0</span>
+                <button onclick="Game.ui.allocateStat('int')">+</button>
+            </div>
+            <div class="stat-row">
+                <span>❤️ Живучесть (HP/Защита)</span>
+                <span id="stat-vit">0</span>
+                <button onclick="Game.ui.allocateStat('vit')">+</button>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">Итоговые показатели</h3>
+        <div class="derived-stats">
+            <div>❤️ Макс. HP: <span id="derived-hp">0</span></div>
+            <div>💧 Макс. MP: <span id="derived-mp">0</span></div>
+            <div>⚔️ Атака: <span id="derived-atk">0</span></div>
+            <div>🛡️ Защита: <span id="derived-def">0</span></div>
+            <div>👟 Скорость: <span id="derived-speed">0</span></div>
+        </div>
+        <button class="btn-close" onclick="Game.ui.toggle('panel-stats')">Закрыть (Esc)</button>
+    </div>
+
+    <!-- Панель Навыков -->
+    <div id="panel-skills" class="game-panel hidden">
+        <h2>🌳 Дерево навыков <span style="color: #3498db; font-size: 16px;">(Очков: <span id="skill-points-display">0</span>)</span></h2>
+        <!-- Примечание: значение skill-points берется из player.skillPoints, обновим в renderSkills -->
+        <div id="skills-list" class="list-container"></div>
+        <button class="btn-close" onclick="Game.ui.toggle('panel-skills')">Закрыть (Esc)</button>
+    </div>
+
     <script src="js/data/constants.js"></script>
     <script src="js/entities/Player.js"></script>
     <script src="js/entities/PlayerRenderer.js"></script>
+    <script src="js/core/UIManager.js"></script>
     <script src="js/core/Game.js"></script>
     <script src="js/main.js"></script>
 </body>

@@ -1,63 +1,138 @@
 class Player {
     constructor(x, y) {
-        // Позиция
         this.x = x;
         this.y = y;
-        this.direction = 'down'; // 'up', 'down', 'left', 'right' (для будущих спрайтов)
+        this.direction = 'down';
 
-        // Характеристики
-        this.level = 1;
-        this.xp = 0;
-        this.xpToNextLevel = 100;
+        // Базовые характеристики (очки для распределения)
+        this.str = 1; // Сила (влияет на атаку)
+        this.agi = 1; // Ловкость (влияет на скорость)
+        this.int = 1; // Интеллект (влияет на ману)
+        this.vit = 1; // Живучесть (влияет на здоровье и защиту)
         
-        this.hp = 100;
-        this.maxHp = 100;
-        this.mp = 50;
-        this.maxMp = 50;
-        
-        this.baseAtk = 10;
-        this.baseDef = 2;
-        this.gold = 50;
+        this.statPoints = 5; // Даем очки для теста
+        this.skillPoints = 3; // Даем очки для теста
 
-        // Инвентарь и экипировка
-        this.inventory = [
-            { id: 'potion_hp_1', name: 'Зелье HP', icon: '🧪', type: 'consumable', heal: 30, price: 20 }
-        ];
-        this.equipment = {
-            weapon: null, // { name, atk }
-            armor: null   // { name, def }
+        // Навыки (уровень прокачки)
+        this.skills = {
+            'power_strike': 0,
+            'vitality': 0,
+            'agility': 0
         };
 
-        // Состояния
+        // Инвентарь: массив { id: 'item_id', count: 1 }
+        this.inventory = [
+            { id: 'potion_hp', count: 3 },
+            { id: 'sword_iron', count: 1 }
+        ];
+        
+        this.equipment = {
+            weapon: null,
+            armor: null
+        };
+
         this.attackCooldown = 0;
         this.isMoving = false;
     }
 
-    get totalAtk() {
-        return this.baseAtk + (this.equipment.weapon ? this.equipment.weapon.atk : 0);
+    // --- Вычисляемые характеристики ---
+    get maxHp() { return 100 + (this.vit * 10) + (this.skills['vitality'] * 15); }
+    get maxMp() { return 50 + (this.int * 10); }
+    get totalAtk() { 
+        let atk = 10 + (this.str * 2);
+        if (this.equipment.weapon) atk += CONSTANTS.ITEMS[this.equipment.weapon].atk;
+        atk *= (1 + this.skills['power_strike'] * 0.05); // +5% за уровень
+        return Math.floor(atk);
+    }
+    get totalDef() { 
+        let def = 2 + (this.vit * 1);
+        if (this.equipment.armor) def += CONSTANTS.ITEMS[this.equipment.armor].def;
+        return def;
+    }
+    get speed() { return CONSTANTS.PLAYER_SPEED + (this.skills['agility'] * 0.2); }
+
+    // --- Управление инвентарем ---
+    addItem(itemId, count = 1) {
+        const existing = this.inventory.find(i => i.id === itemId);
+        if (existing) {
+            existing.count += count;
+        } else {
+            this.inventory.push({ id: itemId, count: count });
+        }
     }
 
-    get totalDef() {
-        return this.baseDef + (this.equipment.armor ? this.equipment.armor.def : 0);
+    removeItem(itemId, count = 1) {
+        const index = this.inventory.findIndex(i => i.id === itemId);
+        if (index !== -1) {
+            this.inventory[index].count -= count;
+            if (this.inventory[index].count <= 0) {
+                this.inventory.splice(index, 1);
+            }
+            return true;
+        }
+        return false;
     }
 
+    useItem(itemId) {
+        const itemData = CONSTANTS.ITEMS[itemId];
+        if (!itemData) return;
+
+        if (itemData.type === 'consumable') {
+            if (itemData.heal) this.heal(itemData.heal);
+            if (itemData.mp) this.mp = Math.min(this.maxMp, this.mp + itemData.mp);
+            this.removeItem(itemId, 1);
+            return true;
+        } else if (itemData.type === 'weapon' || itemData.type === 'armor') {
+            this.equipItem(itemId);
+            return true;
+        }
+        return false;
+    }
+
+    equipItem(itemId) {
+        const itemData = CONSTANTS.ITEMS[itemId];
+        const slot = itemData.type; // 'weapon' или 'armor'
+        
+        // Снимаем старое, если есть
+        if (this.equipment[slot]) {
+            this.addItem(this.equipment[slot], 1);
+        }
+        
+        this.equipment[slot] = itemId;
+        this.removeItem(itemId, 1);
+    }
+
+    // --- Прокачка ---
+    allocateStat(statName) {
+        if (this.statPoints > 0 && ['str', 'agi', 'int', 'vit'].includes(statName)) {
+            this[statName]++;
+            this.statPoints--;
+        }
+    }
+
+    upgradeSkill(skillId) {
+        const skill = CONSTANTS.SKILLS[skillId];
+        if (this.skillPoints >= skill.costPerLevel && this.skills[skillId] < skill.maxLevel) {
+            this.skills[skillId]++;
+            this.skillPoints -= skill.costPerLevel;
+        }
+    }
+
+    // --- Базовые методы ---
     move(dx, dy, map) {
         if (dx > 0) this.direction = 'right';
         if (dx < 0) this.direction = 'left';
         if (dy > 0) this.direction = 'down';
         if (dy < 0) this.direction = 'up';
 
-        const newX = this.x + dx;
-        const newY = this.y + dy;
+        const newX = this.x + dx * (this.speed / CONSTANTS.PLAYER_SPEED);
+        const newY = this.y + dy * (this.speed / CONSTANTS.PLAYER_SPEED);
 
-        // Проверка коллизий со стенами
         const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
         const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
-        // 1 = стена, 5 = вода (пример)
         if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
-            const tile = map[tileY][tileX];
-            if (tile !== 1 && tile !== 5) {
+            if (map[tileY][tileX] !== 1 && map[tileY][tileX] !== 5) {
                 this.x = newX;
                 this.y = newY;
                 this.isMoving = true;
@@ -65,44 +140,22 @@ class Player {
                 this.isMoving = false;
             }
         }
-
-        if (this.attackCooldown > 0) this.attackCooldown--;
     }
 
     takeDamage(amount) {
         const actualDamage = Math.max(1, amount - this.totalDef);
-        this.hp -= actualDamage;
+        this.hp = (this.hp || this.maxHp) - actualDamage; // инициализация при первом ударе
         return actualDamage;
     }
 
     heal(amount) {
+        this.hp = (this.hp || this.maxHp);
         this.hp = Math.min(this.maxHp, this.hp + amount);
     }
 
-    gainXp(amount) {
-        this.xp += amount;
-        if (this.xp >= this.xpToNextLevel) {
-            this.levelUp();
-        }
-    }
-
-    levelUp() {
-        this.level++;
-        this.xp -= this.xpToNextLevel;
-        this.xpToNextLevel = Math.floor(this.xpToNextLevel * 1.5);
-        
-        this.maxHp += 20;
-        this.hp = this.maxHp;
-        this.maxMp += 10;
-        this.mp = this.maxMp;
-        this.baseAtk += 3;
-        this.baseDef += 1;
-        
-        console.log(`🎉 Уровень повышен! Теперь уровень ${this.level}`);
-    }
-
     update() {
-        // Здесь будет пассивная регенерация или тик кулдаунов
+        if (!this.hp) this.hp = this.maxHp;
+        if (!this.mp) this.mp = this.maxMp;
         if (this.attackCooldown > 0) this.attackCooldown--;
     }
 }
