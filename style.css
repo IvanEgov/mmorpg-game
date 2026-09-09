@@ -250,3 +250,63 @@ body {
     cursor: pointer;
     margin-top: 10px;
 }
+/* Слоты экипировки */
+.equipment-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.equipment-slot {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slot-label {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: bold;
+}
+
+.slot-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .slot-item .item-icon {
+        font-size: 20px;
+    }
+
+    .slot-item .item-name {
+        font-size: 13px;
+        color: #fff;
+        font-weight: bold;
+    }
+
+.slot-empty {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+.btn-unequip {
+    padding: 4px 8px;
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+    .btn-unequip:hover {
+        background: #e74c3c;
+    }

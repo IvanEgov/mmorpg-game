@@ -8,7 +8,7 @@
 </head>
 <body>
     <canvas id="game" width="960" height="640"></canvas>
-    
+
     <div id="hud">
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
@@ -50,12 +50,17 @@
             <div class="stat-row"><span>🧠 Интеллект</span><span id="stat-int">0</span><button data-stat="int">+</button></div>
             <div class="stat-row"><span>❤️ Живучесть</span><span id="stat-vit">0</span><button data-stat="vit">+</button></div>
         </div>
+
+        <h3>🛡️ Экипировка</h3>
+        <div id="equipment-slots" class="equipment-container"></div>
+
         <h3>Итоговые показатели</h3>
         <div class="derived-stats">
             <div>❤️ HP: <span id="derived-hp">0</span></div>
             <div>💧 MP: <span id="derived-mp">0</span></div>
             <div>⚔️ Атака: <span id="derived-atk">0</span></div>
             <div>🛡️ Защита: <span id="derived-def">0</span></div>
+            <div>👟 Скорость: <span id="derived-speed">0</span></div>
         </div>
         <button class="btn-close" id="close-stats">Закрыть</button>
     </div>

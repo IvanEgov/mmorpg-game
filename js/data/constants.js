@@ -8,6 +8,7 @@ const CONSTANTS = {
     ATTACK_RANGE: 60,
     ATTACK_COOLDOWN: 25,
     INTERACT_RANGE: 50,
+    EQUIPMENT_SLOTS: ['weapon', 'helmet', 'chest', 'legs', 'boots', 'ring'],
     COLORS: {
         GRASS: '#2d5a3d',
         WALL: '#555555',
@@ -24,17 +25,42 @@ const CONSTANTS = {
         PORTAL: '#a4f'
     },
     ITEMS: {
+        // Расходники
         'potion_hp': { id: 'potion_hp', name: 'Зелье HP', icon: '🧪', type: 'consumable', heal: 30, price: 20, desc: '+30 HP' },
         'potion_mp': { id: 'potion_mp', name: 'Зелье MP', icon: '💧', type: 'consumable', mp: 20, price: 25, desc: '+20 MP' },
+
+        // Оружие
         'sword_iron': { id: 'sword_iron', name: 'Железный меч', icon: '🗡️', type: 'weapon', atk: 5, price: 100, desc: '+5 атака' },
         'sword_steel': { id: 'sword_steel', name: 'Стальной меч', icon: '⚔️', type: 'weapon', atk: 12, price: 300, desc: '+12 атака' },
-        'armor_leather': { id: 'armor_leather', name: 'Кожаная броня', icon: '🦺', type: 'armor', def: 3, price: 80, desc: '+3 защита' },
-        'armor_chain': { id: 'armor_chain', name: 'Кольчуга', icon: '🛡️', type: 'armor', def: 8, price: 250, desc: '+8 защита' },
+        'sword_dragon': { id: 'sword_dragon', name: 'Меч дракона', icon: '🔥', type: 'weapon', atk: 25, price: 1000, desc: '+25 атака' },
+
+        // Шлемы
+        'helmet_leather': { id: 'helmet_leather', name: 'Кожаный шлем', icon: '🪖', type: 'helmet', def: 2, price: 60, desc: '+2 защита' },
+        'helmet_iron': { id: 'helmet_iron', name: 'Железный шлем', icon: '⛑️', type: 'helmet', def: 5, price: 200, desc: '+5 защита' },
+
+        // Нагрудники
+        'armor_leather': { id: 'armor_leather', name: 'Кожаная броня', icon: '🦺', type: 'chest', def: 3, price: 80, desc: '+3 защита' },
+        'armor_chain': { id: 'armor_chain', name: 'Кольчуга', icon: '🛡️', type: 'chest', def: 8, price: 250, desc: '+8 защита' },
+        'armor_plate': { id: 'armor_plate', name: 'Латные доспехи', icon: '🦾', type: 'chest', def: 15, price: 600, desc: '+15 защита' },
+
+        // Штаны
+        'legs_leather': { id: 'legs_leather', name: 'Кожаные штаны', icon: '👖', type: 'legs', def: 2, price: 70, desc: '+2 защита' },
+        'legs_chain': { id: 'legs_chain', name: 'Кольчужные поножи', icon: '🩳', type: 'legs', def: 6, price: 220, desc: '+6 защита' },
+
+        // Обувь
+        'boots_leather': { id: 'boots_leather', name: 'Кожаные сапоги', icon: '👢', type: 'boots', def: 1, speed: 0.2, price: 50, desc: '+1 защита, +0.2 скорость' },
+        'boots_iron': { id: 'boots_iron', name: 'Железные сапоги', icon: '🥾', type: 'boots', def: 3, speed: 0.1, price: 180, desc: '+3 защита, +0.1 скорость' },
+
+        // Кольца
+        'ring_power': { id: 'ring_power', name: 'Кольцо силы', icon: '💍', type: 'ring', atk: 3, price: 150, desc: '+3 атака' },
+        'ring_vitality': { id: 'ring_vitality', name: 'Кольцо живучести', icon: '💎', type: 'ring', hp: 30, price: 200, desc: '+30 HP' },
+
+        // Материалы
         'slime_gel': { id: 'slime_gel', name: 'Слизь', icon: '🟢', type: 'material', price: 5, desc: 'Материал' }
     },
     SHOP_ITEMS: {
-        'mage': ['potion_hp', 'potion_mp', 'sword_iron', 'armor_leather'],
-        'smith': ['sword_steel', 'armor_chain', 'sword_iron']
+        'mage': ['potion_hp', 'potion_mp', 'sword_iron', 'armor_leather', 'helmet_leather', 'ring_power'],
+        'smith': ['sword_steel', 'armor_chain', 'legs_chain', 'boots_iron', 'helmet_iron', 'ring_vitality']
     },
     SKILLS: {
         'power_strike': { id: 'power_strike', name: 'Мощный удар', icon: '💥', desc: '+5% урона/ур.', maxLevel: 5, costPerLevel: 1 },

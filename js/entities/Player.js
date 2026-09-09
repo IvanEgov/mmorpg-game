@@ -1,4 +1,5 @@
 class Player {
+    
     constructor(x, y) {
         this.x = x; this.y = y; this.direction = 'down';
         this.level = 1; this.xp = 0; this.maxXp = 100;
@@ -9,37 +10,68 @@ class Player {
             { id: 'potion_hp', count: 3 },
             { id: 'sword_iron', count: 1 }
         ];
-        this.equipment = { weapon: null, armor: null };
+
+        // === РАСШИРЕННАЯ ЭКИПИРОВКА ===
+        this.equipment = {
+            weapon: null,
+            helmet: null,
+            chest: null,
+            legs: null,
+            boots: null,
+            ring: null
+        };
+
+        this.storage = [];
+        this.activeQuests = [];
         this.attackCooldown = 0;
         this.isMoving = false;
         this.hp = this.maxHp;
         this.mp = this.maxMp;
         this.gold = 50;
-
-        // === НОВОЕ: Анимация атаки ===
-        this.attackAnimation = null; // { active, progress, duration, angle }
-
-        // === НОВОЕ: Регенерация ===
+        this.attackAnimation = null;
         this.regenTimer = 0;
-        this.REGEN_INTERVAL = 60; // Каждый 1 секунду (60 кадров)
+        this.REGEN_INTERVAL = 60;
         this.REGEN_HP = 1;
         this.REGEN_MP = 2;
     }
 
-    get maxHp() { return 100 + (this.vit * 15) + (this.skills['vitality'] * 20); }
+    get maxHp() {
+        let hp = 100 + (this.vit * 15) + (this.skills['vitality'] * 20);
+        if (this.equipment.ring && CONSTANTS.ITEMS[this.equipment.ring].hp) {
+            hp += CONSTANTS.ITEMS[this.equipment.ring].hp;
+        }
+        return hp;
+    }
+
     get maxMp() { return 50 + (this.int * 10); }
+
     get totalAtk() {
         let atk = 10 + (this.str * 3);
         if (this.equipment.weapon) atk += CONSTANTS.ITEMS[this.equipment.weapon].atk;
+        if (this.equipment.ring && CONSTANTS.ITEMS[this.equipment.ring].atk) {
+            atk += CONSTANTS.ITEMS[this.equipment.ring].atk;
+        }
         atk *= (1 + this.skills['power_strike'] * 0.05);
         return Math.floor(atk);
     }
+
     get totalDef() {
         let def = 2 + (this.vit * 1);
-        if (this.equipment.armor) def += (CONSTANTS.ITEMS[this.equipment.armor]?.def || 0);
+        for (const slot of ['helmet', 'chest', 'legs', 'boots']) {
+            if (this.equipment[slot]) {
+                def += CONSTANTS.ITEMS[this.equipment[slot]].def || 0;
+            }
+        }
         return def;
     }
-    get speed() { return CONSTANTS.PLAYER_SPEED + (this.skills['agility'] * 0.3); }
+
+    get speed() {
+        let speed = CONSTANTS.PLAYER_SPEED + (this.skills['agility'] * 0.3);
+        if (this.equipment.boots && CONSTANTS.ITEMS[this.equipment.boots].speed) {
+            speed += CONSTANTS.ITEMS[this.equipment.boots].speed;
+        }
+        return speed;
+    }
 
     gainXp(amount) {
         this.xp += amount;
@@ -236,4 +268,34 @@ class Player {
         }
         return false;
     }
+        // === НОВОЕ: Методы сохранения ===
+        saveToJSON() {
+            return {
+                x: this.x,
+                y: this.y,
+                direction: this.direction,
+                level: this.level,
+                xp: this.xp,
+                maxXp: this.maxXp,
+                statPoints: this.statPoints,
+                skillPoints: this.skillPoints,
+                str: this.str,
+                agi: this.agi,
+                int: this.int,
+                vit: this.vit,
+                skills: this.skills,
+                inventory: this.inventory,
+                equipment: this.equipment,
+                storage: this.storage,
+                activeQuests: this.activeQuests,
+                hp: this.hp,
+                mp: this.mp,
+                gold: this.gold
+            };
+        }
+
+        loadFromJSON(data) {
+            Object.assign(this, data);
+        }
+    
 }

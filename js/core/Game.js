@@ -2,7 +2,21 @@ class Game {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.player = new Player(15 * CONSTANTS.TILE_SIZE, 10 * CONSTANTS.TILE_SIZE);
+
+        // === НОВОЕ: Загружаем сохранение или создаём нового игрока ===
+        const savedData = localStorage.getItem('dungeonChronicles_save');
+        if (savedData) {
+            console.log('📂 Загрузка сохранения...');
+            const data = JSON.parse(savedData);
+            this.player = new Player(data.player.x, data.player.y);
+            this.player.loadFromJSON(data.player);
+            this.currentLocationId = data.currentLocationId || 'city';
+        } else {
+            console.log('🆕 Новая игра');
+            this.player = new Player(15 * CONSTANTS.TILE_SIZE, 10 * CONSTANTS.TILE_SIZE);
+            this.currentLocationId = 'city';
+        }
+
         this.playerRenderer = new PlayerRenderer();
         this.enemyRenderer = new EnemyRenderer();
         this.ui = new UIManager(this.player);
@@ -13,14 +27,10 @@ class Game {
         this.lastTime = 0;
         this.damageNumbers = [];
 
-        // === СИСТЕМА ЛОКАЦИЙ ===
         this.locations = {
-            'city': new CityLocation(),
-            'dungeon_1': null,
-            'dungeon_2': null
+            'city': new CityLocation()
         };
-        this.currentLocationId = 'city';
-        this.currentLocation = this.locations['city'];
+        this.currentLocation = this.locations[this.currentLocationId] || this.locations['city'];
 
         window.gameInstance = this;
         this.setupInput();
@@ -30,35 +40,88 @@ class Game {
         console.log('✅ Игра загружена! Локация:', this.currentLocation.name);
     }
 
+    // === НОВОЕ: Сохранение игры ===
+    saveGame() {
+        const data = {
+            player: this.player.saveToJSON(),
+            currentLocationId: this.currentLocationId
+        };
+        localStorage.setItem('dungeonChronicles_save', JSON.stringify(data));
+        console.log('💾 Игра сохранена!');
+    }
+
+    // === НОВОЕ: Загрузка игры ===
+    loadGame() {
+        const savedData = localStorage.getItem('dungeonChronicles_save');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            this.player.loadFromJSON(data.player);
+            this.changeLocation(data.currentLocationId || 'city');
+            this.ui.updateHUD();
+            console.log('📂 Игра загружена!');
+            return true;
+        }
+        return false;
+    }
+
     changeLocation(locationId) {
         console.log(`🌀 Переход в: ${locationId}`);
 
-        // === ИСПРАВЛЕНО: Данжи всегда пересоздаются заново ===
         if (locationId.startsWith('dungeon_')) {
-            // Удаляем старую локацию из кэша, чтобы мобы появились заново
             this.locations[locationId] = new DungeonLocation(locationId);
-            console.log(`🔄 Данж ${locationId} пересоздан с новыми мобами!`);
         } else if (locationId === 'city' && !this.locations['city']) {
-            // Город создаётся только один раз (чтобы NPC и хранилище сохранялись)
             this.locations['city'] = new CityLocation();
         }
 
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId];
 
-        // Позиционируем игрока
         if (locationId === 'city') {
-            // Возвращаемся в центр города
             this.player.x = 15 * CONSTANTS.TILE_SIZE;
             this.player.y = 10 * CONSTANTS.TILE_SIZE;
         } else {
-            // Появляемся у входа в данж
             this.player.x = 3 * CONSTANTS.TILE_SIZE;
             this.player.y = 3 * CONSTANTS.TILE_SIZE;
         }
 
-        // Обновляем HUD с названием локации
         document.getElementById('location-name').textContent = this.currentLocation.name;
+
+        // === НОВОЕ: Сохраняем при переходе ===
+        this.saveGame();
+    }
+
+    performAttack() {
+        const enemies = this.currentLocation.entities.filter(e => e instanceof Enemy);
+        const result = this.player.attack(enemies);
+        if (result) {
+            this.addDamageNumber(result.enemy.x, result.enemy.y - 10, result.damage, '#ffe066');
+
+            if (result.killed) {
+                this.player.gainXp(result.enemy.xpReward);
+                this.player.gold += result.enemy.goldReward;
+                const loot = result.enemy.getLoot();
+                loot.forEach(itemId => {
+                    this.player.addItem(itemId);
+                    if (this.player.activeQuests) {
+                        this.player.activeQuests.forEach(q => {
+                            const questData = CONSTANTS.QUESTS[q.id];
+                            if (questData.target === result.enemy.type) {
+                                q.progress = (q.progress || 0) + 1;
+                            } else if (questData.target === itemId) {
+                                q.progress = (q.progress || 0) + 1;
+                            }
+                        });
+                    }
+                });
+                setTimeout(() => {
+                    this.currentLocation.entities = this.currentLocation.entities.filter(e => e !== result.enemy);
+                }, 500);
+                this.ui.updateHUD();
+
+                // === НОВОЕ: Сохраняем после убийства ===
+                this.saveGame();
+            }
+        }
     }
 
     setupInput() {

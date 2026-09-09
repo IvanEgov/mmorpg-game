@@ -62,6 +62,56 @@ class UIManager {
         document.getElementById('derived-mp').textContent = p.maxMp;
         document.getElementById('derived-atk').textContent = p.totalAtk;
         document.getElementById('derived-def').textContent = p.totalDef;
+        document.getElementById('derived-speed').textContent = p.speed.toFixed(1);
+
+        // === НОВОЕ: Рендер слотов экипировки ===
+        this.renderEquipmentSlots();
+    }
+
+    renderEquipmentSlots() {
+        const container = document.getElementById('equipment-slots');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const slotNames = {
+            'weapon': '⚔️ Оружие',
+            'helmet': '🪖 Шлем',
+            'chest': '🦺 Нагрудник',
+            'legs': '👖 Штаны',
+            'boots': '👢 Обувь',
+            'ring': '💍 Кольцо'
+        };
+
+        for (const slot of CONSTANTS.EQUIPMENT_SLOTS) {
+            const itemId = this.player.equipment[slot];
+            const item = itemId ? CONSTANTS.ITEMS[itemId] : null;
+
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'equipment-slot';
+
+            if (item) {
+                slotDiv.innerHTML = `
+                    <div class="slot-label">${slotNames[slot]}</div>
+                    <div class="slot-item">
+                        <span class="item-icon">${item.icon}</span>
+                        <span class="item-name">${item.name}</span>
+                    </div>
+                    <button class="btn-unequip">Снять</button>
+                `;
+                slotDiv.querySelector('.btn-unequip').onclick = () => {
+                    this.player.addItem(itemId, 1);
+                    this.player.equipment[slot] = null;
+                    this.renderStats();
+                    this.updateHUD();
+                };
+            } else {
+                slotDiv.innerHTML = `
+                    <div class="slot-label">${slotNames[slot]}</div>
+                    <div class="slot-empty">Пусто</div>
+                `;
+            }
+            container.appendChild(slotDiv);
+        }
     }
 
     renderSkills() {
@@ -164,6 +214,7 @@ class UIManager {
                     this.player.gold -= item.price;
                     this.player.addItem(itemId);
                     this.updateHUD();
+                    window.gameInstance.saveGame(); // === НОВОЕ ===
                     alert(`Куплено: ${item.name}`);
                 } else {
                     alert('Недостаточно золота!');
@@ -326,5 +377,25 @@ class UIManager {
     closePanel(panelId) {
         document.getElementById(panelId).classList.add('hidden');
         this.activePanel = null;
+    }
+    allocateStat(statName) {
+        this.player.allocateStat(statName);
+        this.render('panel-stats');
+        window.gameInstance.updateHUD();
+        window.gameInstance.saveGame(); // === НОВОЕ ===
+    }
+
+    upgradeSkill(skillId) {
+        this.player.upgradeSkill(skillId);
+        this.render('panel-skills');
+        window.gameInstance.updateHUD();
+        window.gameInstance.saveGame(); // === НОВОЕ ===
+    }
+
+    useItem(itemId) {
+        this.player.useItem(itemId);
+        this.render('panel-inventory');
+        window.gameInstance.updateHUD();
+        window.gameInstance.saveGame(); // === НОВОЕ ===
     }
 }
