@@ -7,8 +7,6 @@ class UIManager {
     toggle(panelId) {
         const panel = document.getElementById(panelId);
         const isHidden = panel.classList.contains('hidden');
-        
-        // Закрываем все панели
         document.querySelectorAll('.game-panel').forEach(p => p.classList.add('hidden'));
         
         if (isHidden) {
@@ -29,12 +27,10 @@ class UIManager {
     renderInventory() {
         const container = document.getElementById('inventory-list');
         container.innerHTML = '';
-
         if (this.player.inventory.length === 0) {
             container.innerHTML = '<p class="empty-text">Инвентарь пуст</p>';
             return;
         }
-
         this.player.inventory.forEach(itemSlot => {
             const item = CONSTANTS.ITEMS[itemSlot.id];
             const div = document.createElement('div');
@@ -45,7 +41,7 @@ class UIManager {
                     <div class="item-name">${item.name} ${itemSlot.count > 1 ? `x${itemSlot.count}` : ''}</div>
                     <div class="item-desc">${item.desc}</div>
                 </div>
-                <button class="btn-use" onclick="Game.ui.useItem('${item.id}')">
+                <button class="btn-use" onclick="window.gameInstance.ui.useItem('${item.id}')">
                     ${item.type === 'consumable' ? 'Исп.' : 'Надеть'}
                 </button>
             `;
@@ -65,10 +61,10 @@ class UIManager {
         document.getElementById('derived-mp').textContent = p.maxMp;
         document.getElementById('derived-atk').textContent = p.totalAtk;
         document.getElementById('derived-def').textContent = p.totalDef;
-        document.getElementById('derived-speed').textContent = p.speed.toFixed(1);
     }
 
     renderSkills() {
+        document.getElementById('skill-points-display').textContent = this.player.skillPoints;
         const container = document.getElementById('skills-list');
         container.innerHTML = '';
 
@@ -86,8 +82,8 @@ class UIManager {
                 </div>
                 ${currentLevel < skillData.maxLevel ? `
                     <button class="btn-upgrade" ${canUpgrade ? '' : 'disabled'} 
-                            onclick="Game.ui.upgradeSkill('${skillId}')">
-                        Прокачать (${skillData.costPerLevel} очко)
+                            onclick="window.gameInstance.ui.upgradeSkill('${skillId}')">
+                        Прокачать
                     </button>
                 ` : '<span class="maxed-text">МАКС</span>'}
             `;
@@ -95,22 +91,33 @@ class UIManager {
         }
     }
 
-    // Методы-обертки для onclick из HTML
     useItem(itemId) {
         this.player.useItem(itemId);
         this.render('panel-inventory');
-        Game.updateHUD();
+        window.gameInstance.updateHUD();
     }
-
     allocateStat(statName) {
         this.player.allocateStat(statName);
         this.render('panel-stats');
-        Game.updateHUD();
+        window.gameInstance.updateHUD();
     }
-
     upgradeSkill(skillId) {
         this.player.upgradeSkill(skillId);
         this.render('panel-skills');
-        Game.updateHUD();
+        window.gameInstance.updateHUD();
+    }
+    
+    // Новый метод для обновления HUD (включая XP)
+    updateHUD() {
+        const p = this.player;
+        document.getElementById('hp').textContent = Math.floor(p.hp);
+        document.getElementById('hpMax').textContent = p.maxHp;
+        document.getElementById('lvl').textContent = p.level;
+        document.getElementById('gold').textContent = p.gold || 0;
+        
+        // Обновление XP бара
+        const xpPercent = (p.xp / p.maxXp) * 100;
+        document.getElementById('xp-bar-fill').style.width = `${xpPercent}%`;
+        document.getElementById('xp-text').textContent = `${p.xp} / ${p.maxXp} XP`;
     }
 }

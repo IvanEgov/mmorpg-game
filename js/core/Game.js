@@ -8,59 +8,81 @@ class Game {
         
         this.player = new Player(startX, startY);
         this.playerRenderer = new PlayerRenderer();
-        this.ui = new UIManager(this.player); // <-- Новый менеджер UI
+        this.ui = new UIManager(this.player);
         
         this.map = this.generateTestMap();
         this.keys = {};
         this.setupInput();
-        this.lastTime = 0;
         
-        this.updateHUD();
+        this.lastTime = 0;
+        this.ui.updateHUD(); // Инициализация HUD
+        
+        // ВАЖНО: Делаем экземпляр доступным глобально для onclick в HTML
+        window.gameInstance = this;
     }
 
-    // ... generateTestMap и setupInput остаются без изменений ...
     generateTestMap() {
         const map = [];
         for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
             map[y] = [];
             for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
-                if (x === 0 || y === 0 || x === CONSTANTS.MAP_WIDTH - 1 || y === CONSTANTS.MAP_HEIGHT - 1) {
-                    map[y][x] = 1;
-                } else if (x === 10 && y > 5 && y < 15) {
-                    map[y][x] = 1;
-                } else {
-                    map[y][x] = 0;
-                }
+                if (x === 0 || y === 0 || x === CONSTANTS.MAP_WIDTH - 1 || y === CONSTANTS.MAP_HEIGHT - 1) map[y][x] = 1;
+                else if (x === 10 && y > 5 && y < 15) map[y][x] = 1;
+                else map[y][x] = 0;
             }
         }
         return map;
     }
 
     setupInput() {
+        // Клавиатура
         window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            this.keys[key] = true;
-            
-            // Горячие клавиши UI (работают только если не в поле ввода, если добавишь чат)
-            if (key === 'i' || key === 'ш') this.ui.toggle('panel-inventory');
-            if (key === 'c' || key === 'с') this.ui.toggle('panel-stats');
-            if (key === 'k' || key === 'л') this.ui.toggle('panel-skills');
-            if (key === 'escape') {
+            this.keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'i') this.ui.toggle('panel-inventory');
+            if (e.key.toLowerCase() === 'c') this.ui.toggle('panel-stats');
+            if (e.key.toLowerCase() === 'k') this.ui.toggle('panel-skills');
+            if (e.key === 'Escape') {
                 document.querySelectorAll('.game-panel').forEach(p => p.classList.add('hidden'));
                 this.ui.activePanel = null;
+            }
+            // ТЕСТ: Пробел дает 50 опыта (чтобы ты мог протестировать уровень)
+            if (e.code === 'Space') {
+                this.player.gainXp(50);
+                this.ui.updateHUD();
             }
         });
         window.addEventListener('keyup', (e) => {
             this.keys[e.key.toLowerCase()] = false;
         });
+
+        // Мобильное управление (Touch)
+        const touchBtns = document.querySelectorAll('.d-btn, .action-btn');
+        touchBtns.forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Предотвращает зум и скролл
+                const key = btn.getAttribute('data-key');
+                this.keys[key] = true;
+                btn.classList.add('pressed');
+                
+                if (key === ' ') { // Кнопка действия
+                    this.player.gainXp(50); // Тест: даем опыт при нажатии
+                    this.ui.updateHUD();
+                }
+            }, { passive: false });
+
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const key = btn.getAttribute('data-key');
+                this.keys[key] = false;
+                btn.classList.remove('pressed');
+            }, { passive: false });
+        });
     }
 
     update(deltaTime) {
-        // Если открыта любая панель, ставим игру на паузу
-        if (this.ui.activePanel) return;
+        if (this.ui.activePanel) return; // Пауза при открытом меню
 
         this.player.update();
-
         let dx = 0, dy = 0;
         if (this.keys['w'] || this.keys['ц']) dy -= 1;
         if (this.keys['s'] || this.keys['ы']) dy += 1;
@@ -72,15 +94,6 @@ class Game {
         } else {
             this.player.isMoving = false;
         }
-
-        this.updateHUD();
-    }
-
-    updateHUD() {
-        document.getElementById('hp').textContent = Math.floor(this.player.hp);
-        document.getElementById('hpMax').textContent = this.player.maxHp;
-        document.getElementById('lvl').textContent = '1'; // Пока заглушка
-        document.getElementById('gold').textContent = this.player.gold || 0;
     }
 
     render() {
@@ -94,7 +107,6 @@ class Game {
                 this.ctx.fillRect(x * CONSTANTS.TILE_SIZE, y * CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE);
             }
         }
-
         this.playerRenderer.render(this.ctx, this.player);
     }
 

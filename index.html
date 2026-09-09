@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <!-- ВАЖНО для мобильных: запрещает зум и подстраивает ширину -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dungeon Chronicles — 2D MMORPG</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,62 +14,60 @@
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
         <div class="stat">💰 <span id="gold">50</span></div>
-        <div class="stat" style="margin-left: auto; color: #aaa; font-size: 14px;">
+        <!-- Шкала опыта -->
+        <div class="xp-bar-container">
+            <div id="xp-bar-fill" style="width: 0%;"></div>
+            <span id="xp-text">0 / 100 XP</span>
+        </div>
+        <div class="stat desktop-only" style="margin-left: auto; color: #aaa; font-size: 14px;">
             [I] Инвентарь | [C] Характеристики | [K] Навыки
         </div>
+    </div>
+
+    <!-- Мобильное управление (видимо только на узких экранах) -->
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <button class="d-btn up" data-key="w">▲</button>
+            <div class="d-row">
+                <button class="d-btn left" data-key="a">◀</button>
+                <button class="d-btn right" data-key="d">▶</button>
+            </div>
+            <button class="d-btn down" data-key="s">▼</button>
+        </div>
+        <button class="action-btn" data-key=" ">⚔️</button>
     </div>
 
     <!-- Панель Инвентаря -->
     <div id="panel-inventory" class="game-panel hidden">
         <h2>🎒 Инвентарь</h2>
         <div id="inventory-list" class="list-container"></div>
-        <button class="btn-close" onclick="Game.ui.toggle('panel-inventory')">Закрыть (Esc)</button>
+        <button class="btn-close" onclick="window.gameInstance.ui.toggle('panel-inventory')">Закрыть</button>
     </div>
 
     <!-- Панель Характеристик -->
     <div id="panel-stats" class="game-panel hidden">
-        <h2>📊 Характеристики <span style="color: #f1c40f; font-size: 16px;">(Очков: <span id="stat-points">0</span>)</span></h2>
-        
+        <h2>📊 Характеристики <span style="color: #f1c40f;">(Очков: <span id="stat-points">0</span>)</span></h2>
         <div class="stats-grid">
-            <div class="stat-row">
-                <span>💪 Сила (Атака)</span>
-                <span id="stat-str">0</span>
-                <button onclick="Game.ui.allocateStat('str')">+</button>
-            </div>
-            <div class="stat-row">
-                <span>💨 Ловкость (Скорость)</span>
-                <span id="stat-agi">0</span>
-                <button onclick="Game.ui.allocateStat('agi')">+</button>
-            </div>
-            <div class="stat-row">
-                <span>🧠 Интеллект (Мана)</span>
-                <span id="stat-int">0</span>
-                <button onclick="Game.ui.allocateStat('int')">+</button>
-            </div>
-            <div class="stat-row">
-                <span>❤️ Живучесть (HP/Защита)</span>
-                <span id="stat-vit">0</span>
-                <button onclick="Game.ui.allocateStat('vit')">+</button>
-            </div>
+            <div class="stat-row"><span>💪 Сила</span><span id="stat-str">0</span><button onclick="window.gameInstance.ui.allocateStat('str')">+</button></div>
+            <div class="stat-row"><span>💨 Ловкость</span><span id="stat-agi">0</span><button onclick="window.gameInstance.ui.allocateStat('agi')">+</button></div>
+            <div class="stat-row"><span>🧠 Интеллект</span><span id="stat-int">0</span><button onclick="window.gameInstance.ui.allocateStat('int')">+</button></div>
+            <div class="stat-row"><span>❤️ Живучесть</span><span id="stat-vit">0</span><button onclick="window.gameInstance.ui.allocateStat('vit')">+</button></div>
         </div>
-
         <h3 style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">Итоговые показатели</h3>
         <div class="derived-stats">
-            <div>❤️ Макс. HP: <span id="derived-hp">0</span></div>
-            <div>💧 Макс. MP: <span id="derived-mp">0</span></div>
+            <div>❤️ HP: <span id="derived-hp">0</span></div>
+            <div>💧 MP: <span id="derived-mp">0</span></div>
             <div>⚔️ Атака: <span id="derived-atk">0</span></div>
             <div>🛡️ Защита: <span id="derived-def">0</span></div>
-            <div>👟 Скорость: <span id="derived-speed">0</span></div>
         </div>
-        <button class="btn-close" onclick="Game.ui.toggle('panel-stats')">Закрыть (Esc)</button>
+        <button class="btn-close" onclick="window.gameInstance.ui.toggle('panel-stats')">Закрыть</button>
     </div>
 
     <!-- Панель Навыков -->
     <div id="panel-skills" class="game-panel hidden">
-        <h2>🌳 Дерево навыков <span style="color: #3498db; font-size: 16px;">(Очков: <span id="skill-points-display">0</span>)</span></h2>
-        <!-- Примечание: значение skill-points берется из player.skillPoints, обновим в renderSkills -->
+        <h2>🌳 Навыки <span style="color: #3498db;">(Очков: <span id="skill-points-display">0</span>)</span></h2>
         <div id="skills-list" class="list-container"></div>
-        <button class="btn-close" onclick="Game.ui.toggle('panel-skills')">Закрыть (Esc)</button>
+        <button class="btn-close" onclick="window.gameInstance.ui.toggle('panel-skills')">Закрыть</button>
     </div>
 
     <script src="js/data/constants.js"></script>
