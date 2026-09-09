@@ -15,6 +15,15 @@ class Player {
         this.hp = this.maxHp;
         this.mp = this.maxMp;
         this.gold = 50;
+
+        // === НОВОЕ: Анимация атаки ===
+        this.attackAnimation = null; // { active, progress, duration, angle }
+
+        // === НОВОЕ: Регенерация ===
+        this.regenTimer = 0;
+        this.REGEN_INTERVAL = 60; // Каждый 1 секунду (60 кадров)
+        this.REGEN_HP = 1;
+        this.REGEN_MP = 2;
     }
 
     get maxHp() { return 100 + (this.vit * 15) + (this.skills['vitality'] * 20); }
@@ -129,6 +138,7 @@ class Player {
         return actualDamage;
     }
 
+    // === НОВОЕ: Атака с направлением ===
     attack(enemies) {
         if (this.attackCooldown > 0) return null;
         this.attackCooldown = CONSTANTS.ATTACK_COOLDOWN;
@@ -147,6 +157,14 @@ class Player {
             }
         }
 
+        // === НОВОЕ: Запускаем анимацию атаки ===
+        let attackAngle = this.getDirectionAngle(); // По умолчанию — направление персонажа
+        if (closestEnemy) {
+            // Направление на врага
+            attackAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+        }
+        this.startAttackAnimation(attackAngle);
+
         if (closestEnemy) {
             const damage = this.totalAtk;
             const killed = closestEnemy.takeDamage(damage);
@@ -155,7 +173,46 @@ class Player {
         return null;
     }
 
+    // === НОВОЕ: Получить угол направления персонажа ===
+    getDirectionAngle() {
+        switch (this.direction) {
+            case 'up': return -Math.PI / 2;
+            case 'down': return Math.PI / 2;
+            case 'left': return Math.PI;
+            case 'right': return 0;
+            default: return 0;
+        }
+    }
+
+    // === НОВОЕ: Запуск анимации атаки ===
+    startAttackAnimation(angle) {
+        this.attackAnimation = {
+            active: true,
+            progress: 0,
+            duration: 18, // кадров
+            angle: angle
+        };
+    }
+
+    // === ОБНОВЛЁННЫЙ update: регенерация + анимация ===
     update() {
         if (this.attackCooldown > 0) this.attackCooldown--;
+
+        // Обновление анимации атаки
+        if (this.attackAnimation && this.attackAnimation.active) {
+            this.attackAnimation.progress++;
+            if (this.attackAnimation.progress >= this.attackAnimation.duration) {
+                this.attackAnimation.active = false;
+                this.attackAnimation = null;
+            }
+        }
+
+        // Пассивная регенерация HP/MP
+        this.regenTimer++;
+        if (this.regenTimer >= this.REGEN_INTERVAL) {
+            this.regenTimer = 0;
+            if (this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + this.REGEN_HP);
+            if (this.mp < this.maxMp) this.mp = Math.min(this.maxMp, this.mp + this.REGEN_MP);
+        }
     }
 }

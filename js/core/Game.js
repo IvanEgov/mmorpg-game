@@ -156,14 +156,17 @@ class Game {
         for (const enemy of this.enemies) enemy.update(this.player, this.map);
 
         let dx = 0, dy = 0;
-        if (this.keys['w']) dy -= 1;
-        if (this.keys['s']) dy += 1;
-        if (this.keys['a']) dx -= 1;
-        if (this.keys['d']) dx += 1;
+        if (this.keys['w'] || this.keys['ц']) dy -= 1;
+        if (this.keys['s'] || this.keys['ы']) dy += 1;
+        if (this.keys['a'] || this.keys['ф']) dx -= 1;
+        if (this.keys['d'] || this.keys['в']) dx += 1;
         if (this.joystickActive) { dx = this.joystickX; dy = this.joystickY; }
 
         if (dx !== 0 || dy !== 0) this.player.move(dx, dy, this.map);
         else this.player.isMoving = false;
+
+        // === НОВОЕ: HUD обновляется КАЖДЫЙ КАДР ===
+        this.ui.updateHUD();
     }
 
     render() {
