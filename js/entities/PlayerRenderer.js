@@ -4,9 +4,9 @@ class PlayerRenderer {
         const centerX = player.x + ts / 2;
         const centerY = player.y + ts / 2;
 
-        // === НОВОЕ: Анимация атаки рисуется ПОД персонажем (эффект вспышки на земле) ===
+        // Вспышка на земле при атаке
         if (player.attackAnimation && player.attackAnimation.active) {
-            this.renderAttackAnimation(ctx, player, centerX, centerY);
+            this.renderAttackFlash(ctx, player, centerX, centerY);
         }
 
         // Тень
@@ -15,100 +15,149 @@ class PlayerRenderer {
         ctx.ellipse(centerX, player.y + ts - 4, ts / 3, ts / 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // === НОВОЕ: Лёгкая отдача при атаке (персонаж чуть сдвигается вперёд) ===
+        // Отдача при атаке
         let offsetX = 0, offsetY = 0;
         if (player.attackAnimation && player.attackAnimation.active) {
             const t = player.attackAnimation.progress / player.attackAnimation.duration;
-            const push = Math.sin(t * Math.PI) * 4; // Плавный толчок вперёд и назад
+            const push = Math.sin(t * Math.PI) * 5;
             offsetX = Math.cos(player.attackAnimation.angle) * push;
             offsetY = Math.sin(player.attackAnimation.angle) * push;
         }
 
-        // Тело
+        const drawX = centerX + offsetX;
+        const drawY = centerY + offsetY;
+
+        // === ОРУЖИЕ ЗА ПЕРСОНАЖЕМ (если смотрит вверх) ===
+        const weaponAngle = this.getWeaponAngle(player);
+        if (player.direction === 'up') {
+            this.renderWeapon(ctx, player, drawX, drawY, weaponAngle);
+        }
+
+        // Тело игрока
         ctx.fillStyle = CONSTANTS.COLORS.PLAYER_BODY;
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(centerX + offsetX, centerY + offsetY, ts / 2 - 4, 0, Math.PI * 2);
+        ctx.arc(drawX, drawY, ts / 2 - 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Глаз-индикатор направления
+        // Глаза
         ctx.fillStyle = '#fff';
-        ctx.beginPath();
         const eyeAngle = player.getDirectionAngle();
-        const eyeX = centerX + offsetX + Math.cos(eyeAngle) * 6;
-        const eyeY = centerY + offsetY + Math.sin(eyeAngle) * 6;
-        ctx.arc(eyeX, eyeY, 3, 0, Math.PI * 2);
+        ctx.beginPath();
+        ctx.arc(drawX + Math.cos(eyeAngle) * 5 - 3, drawY + Math.sin(eyeAngle) * 5, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(drawX + Math.cos(eyeAngle) * 5 + 3, drawY + Math.sin(eyeAngle) * 5, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // === НОВОЕ: Анимация слэша рисуется НАД персонажем ===
+        // === ОРУЖИЕ ПЕРЕД ПЕРСОНАЖЕМ (если не вверх) ===
+        if (player.direction !== 'up') {
+            this.renderWeapon(ctx, player, drawX, drawY, weaponAngle);
+        }
+
+        // Слэш-дуга при атаке
         if (player.attackAnimation && player.attackAnimation.active) {
-            this.renderSlash(ctx, player, centerX + offsetX, centerY + offsetY);
+            this.renderSlash(ctx, player, drawX, drawY);
         }
     }
 
-    // === НОВОЕ: Отрисовка вспышки на земле ===
-    renderAttackAnimation(ctx, player, centerX, centerY) {
-        const anim = player.attackAnimation;
-        const t = anim.progress / anim.duration;
+    // === Угол оружия: базовое направление + вращение при атаке ===
+    getWeaponAngle(player) {
+        let baseAngle = player.getDirectionAngle();
+        let attackOffset = 0;
 
-        // Радиус расширяется от 10 до 50
-        const radius = 10 + t * 40;
-        // Прозрачность: появляется и исчезает
-        const alpha = Math.sin(t * Math.PI) * 0.6;
+        if (player.attackAnimation && player.attackAnimation.active) {
+            const t = player.attackAnimation.progress / player.attackAnimation.duration;
+            // Меч вращается от -90° до +90° за время анимации
+            attackOffset = -Math.PI / 2 + t * Math.PI;
+        }
+
+        return baseAngle + attackOffset;
+    }
+
+    // === Отрисовка меча в руке ===
+    renderWeapon(ctx, player, x, y, angle) {
+        const hasWeapon = player.equipment.weapon !== null;
+        const swordLength = hasWeapon ? 22 : 14;
+        const swordWidth = hasWeapon ? 4 : 3;
+        const handleLength = 6;
 
         ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(anim.angle);
+        ctx.translate(x, y);
+        ctx.rotate(angle);
 
-        // Жёлтая вспышка в направлении удара
-        const gradient = ctx.createRadialGradient(20, 0, 0, 20, 0, radius);
-        gradient.addColorStop(0, `rgba(255, 230, 100, ${alpha})`);
-        gradient.addColorStop(1, `rgba(255, 150, 50, 0)`);
+        // Рукоятка (коричневая)
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(swordLength * 0.3, -swordWidth / 2, handleLength, swordWidth);
 
-        ctx.fillStyle = gradient;
+        // Лезвие (серое/серебряное)
+        const bladeGradient = ctx.createLinearGradient(0, 0, swordLength, 0);
+        bladeGradient.addColorStop(0, hasWeapon ? '#c0c0c0' : '#888');
+        bladeGradient.addColorStop(1, hasWeapon ? '#ffffff' : '#aaa');
+        ctx.fillStyle = bladeGradient;
+
+        // Форма лезвия (сужается к кончику)
         ctx.beginPath();
-        ctx.arc(20, 0, radius, -Math.PI / 3, Math.PI / 3);
+        ctx.moveTo(handleLength + 2, -swordWidth / 2);
+        ctx.lineTo(swordLength, 0); // Кончик
+        ctx.lineTo(handleLength + 2, swordWidth / 2);
+        ctx.closePath();
         ctx.fill();
+
+        // Гарда (перекладина)
+        ctx.fillStyle = '#DAA520';
+        ctx.fillRect(handleLength, -swordWidth, 3, swordWidth * 2);
 
         ctx.restore();
     }
 
-    // === НОВОЕ: Отрисовка слэша (дуга меча) ===
+    renderAttackFlash(ctx, player, centerX, centerY) {
+        const anim = player.attackAnimation;
+        const t = anim.progress / anim.duration;
+        const radius = 10 + t * 40;
+        const alpha = Math.sin(t * Math.PI) * 0.5;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(anim.angle);
+        const gradient = ctx.createRadialGradient(20, 0, 0, 20, 0, radius);
+        gradient.addColorStop(0, `rgba(255, 230, 100, ${alpha})`);
+        gradient.addColorStop(1, `rgba(255, 150, 50, 0)`);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(20, 0, radius, -Math.PI / 3, Math.PI / 3);
+        ctx.fill();
+        ctx.restore();
+    }
+
     renderSlash(ctx, player, centerX, centerY) {
         const anim = player.attackAnimation;
         const t = anim.progress / anim.duration;
-
-        // Слэш появляется в первой половине анимации
         if (t > 0.7) return;
 
-        const slashProgress = t / 0.7; // 0..1
+        const slashProgress = t / 0.7;
         const alpha = Math.sin(slashProgress * Math.PI);
-
         const slashRadius = 35;
-        const slashWidth = 4;
 
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(anim.angle);
 
-        // Дуга слэша (от -60° до +60°)
         const startAngle = -Math.PI / 3;
         const endAngle = Math.PI / 3;
         const currentEnd = startAngle + (endAngle - startAngle) * slashProgress;
 
-        // Белая дуга с жёлтым свечением
         ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.lineWidth = slashWidth;
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.arc(0, 0, slashRadius, startAngle, currentEnd);
         ctx.stroke();
 
-        // Внешнее жёлтое свечение
-        ctx.strokeStyle = `rgba(255, 220, 100, ${alpha * 0.6})`;
-        ctx.lineWidth = slashWidth + 4;
+        ctx.strokeStyle = `rgba(255, 220, 100, ${alpha * 0.5})`;
+        ctx.lineWidth = 8;
         ctx.beginPath();
         ctx.arc(0, 0, slashRadius, startAngle, currentEnd);
         ctx.stroke();

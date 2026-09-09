@@ -14,6 +14,13 @@ class Enemy {
         this.isDead = false;
         this.hitFlash = 0;
         this.attackCooldown = 0;
+        this.direction = 'down';
+
+        // === НОВОЕ: Анимация атаки врага ===
+        this.attackAnimation = null;
+
+        // === НОВОЕ: Минимальная дистанция до игрока ===
+        this.minDistance = 40; // Не подходит ближе 40 пикселей
     }
 
     update(player, map) {
@@ -21,11 +28,28 @@ class Enemy {
         if (this.hitFlash > 0) this.hitFlash--;
         if (this.attackCooldown > 0) this.attackCooldown--;
 
+        // Обновление анимации атаки
+        if (this.attackAnimation && this.attackAnimation.active) {
+            this.attackAnimation.progress++;
+            if (this.attackAnimation.progress >= this.attackAnimation.duration) {
+                this.attackAnimation.active = false;
+                this.attackAnimation = null;
+            }
+        }
+
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const distance = Math.hypot(dx, dy);
 
-        if (distance < 200 && distance > CONSTANTS.TILE_SIZE * 0.8) {
+        // Направление
+        if (Math.abs(dx) > Math.abs(dy)) {
+            this.direction = dx > 0 ? 'right' : 'left';
+        } else {
+            this.direction = dy > 0 ? 'down' : 'up';
+        }
+
+        // Движение: преследуем, но НЕ ближе minDistance
+        if (distance < 200 && distance > this.minDistance) {
             const moveX = (dx / distance) * this.speed;
             const moveY = (dy / distance) * this.speed;
             const newX = this.x + moveX;
@@ -35,15 +59,31 @@ class Enemy {
 
             if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
                 if (map[tileY][tileX] !== 1) {
-                    this.x = newX; this.y = newY;
+                    this.x = newX;
+                    this.y = newY;
                 }
             }
         }
 
-        if (distance < CONSTANTS.TILE_SIZE * 1.2 && this.attackCooldown === 0) {
-            player.takeDamage(this.atk);
+        // Атака: бьём если в радиусе атаки
+        if (distance < CONSTANTS.TILE_SIZE * 1.5 && this.attackCooldown === 0) {
+            const dmg = player.takeDamage(this.atk);
             this.attackCooldown = 60;
+
+            // Запускаем анимацию атаки врага
+            const attackAngle = Math.atan2(player.y - this.y, player.x - this.x);
+            this.attackAnimation = {
+                active: true,
+                progress: 0,
+                duration: 15,
+                angle: attackAngle
+            };
+
+            // Возвращаем урон для всплывающего числа
+            return { damage: dmg, targetX: player.x, targetY: player.y };
         }
+
+        return null;
     }
 
     takeDamage(amount) {

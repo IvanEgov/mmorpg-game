@@ -14,13 +14,14 @@ class Game {
         this.joystickY = 0;
         this.lastTime = 0;
 
+        // === НОВОЕ: Всплывающие числа урона ===
+        this.damageNumbers = [];
+
         window.gameInstance = this;
         this.spawnEnemies();
         this.setupInput();
         this.setupJoystick();
         this.ui.updateHUD();
-
-        console.log('✅ Игра загружена! Врагов:', this.enemies.length);
     }
 
     generateTestMap() {
@@ -46,20 +47,31 @@ class Game {
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
             if (e.code === 'Space') { e.preventDefault(); this.performAttack(); }
+            if (e.key.toLowerCase() === 'i' || e.key === 'ш') this.ui.toggle('panel-inventory');
+            if (e.key.toLowerCase() === 'c' || e.key === 'с') {
+                this.ui.toggle('panel-stats');
+                this.bindStatButtons();
+            }
+            if (e.key.toLowerCase() === 'k' || e.key === 'л') this.ui.toggle('panel-skills');
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.game-panel').forEach(p => p.classList.add('hidden'));
+                this.ui.activePanel = null;
+            }
         });
         window.addEventListener('keyup', (e) => {
             this.keys[e.key.toLowerCase()] = false;
         });
 
-        // Кнопки меню
         document.getElementById('btn-inv').onclick = () => this.ui.toggle('panel-inventory');
         document.getElementById('btn-stats').onclick = () => {
             this.ui.toggle('panel-stats');
             this.bindStatButtons();
         };
         document.getElementById('btn-skills').onclick = () => this.ui.toggle('panel-skills');
-        document.getElementById('btn-attack').ontouchstart = (e) => { e.preventDefault(); this.performAttack(); };
-        document.getElementById('btn-attack').onclick = () => this.performAttack();
+
+        const atkBtn = document.getElementById('btn-attack');
+        atkBtn.ontouchstart = (e) => { e.preventDefault(); this.performAttack(); };
+        atkBtn.onclick = () => this.performAttack();
 
         document.getElementById('close-inv').onclick = () => this.ui.toggle('panel-inventory');
         document.getElementById('close-stats').onclick = () => this.ui.toggle('panel-stats');
@@ -77,12 +89,25 @@ class Game {
         });
     }
 
+    // === НОВОЕ: Добавить всплывающее число ===
+    addDamageNumber(x, y, value, color) {
+        this.damageNumbers.push({
+            x: x + CONSTANTS.TILE_SIZE / 2 + (Math.random() - 0.5) * 20,
+            y: y,
+            value: value,
+            color: color || '#fff',
+            timer: 0,
+            maxTimer: 45 // 0.75 секунды
+        });
+    }
+
     performAttack() {
         const result = this.player.attack(this.enemies);
         if (result) {
-            console.log(`⚔️ Урон: ${result.damage}`);
+            // Всплывающий урон по врагу (жёлтый)
+            this.addDamageNumber(result.enemy.x, result.enemy.y - 10, result.damage, '#ffe066');
+
             if (result.killed) {
-                console.log(`💀 ${result.enemy.name} убит!`);
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
                 const loot = result.enemy.getLoot();
@@ -118,7 +143,6 @@ class Game {
             centerY = rect.top + rect.height / 2;
             update(e);
         };
-
         const update = (e) => {
             if (!this.joystickActive) return;
             e.preventDefault();
@@ -127,18 +151,14 @@ class Game {
             const deltaY = touch.clientY - centerY;
             const distance = Math.min(Math.hypot(deltaX, deltaY), maxDistance);
             const angle = Math.atan2(deltaY, deltaX);
-            const stickX = Math.cos(angle) * distance;
-            const stickY = Math.sin(angle) * distance;
-            stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
-            this.joystickX = stickX / maxDistance;
-            this.joystickY = stickY / maxDistance;
+            stick.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+            this.joystickX = Math.cos(angle) * distance / maxDistance;
+            this.joystickY = Math.sin(angle) * distance / maxDistance;
         };
-
         const end = (e) => {
             e.preventDefault();
             this.joystickActive = false;
-            this.joystickX = 0;
-            this.joystickY = 0;
+            this.joystickX = 0; this.joystickY = 0;
             stick.style.transform = 'translate(0px, 0px)';
         };
 
@@ -153,7 +173,15 @@ class Game {
     update() {
         if (this.ui.activePanel) return;
         this.player.update();
-        for (const enemy of this.enemies) enemy.update(this.player, this.map);
+
+        // Обновляем врагов и ловим их атаки
+        for (const enemy of this.enemies) {
+            const attackResult = enemy.update(this.player, this.map);
+            if (attackResult) {
+                // Всплывающий урон по игроку (красный)
+                this.addDamageNumber(attackResult.targetX, attackResult.targetY - 10, attackResult.damage, '#ff4444');
+            }
+        }
 
         let dx = 0, dy = 0;
         if (this.keys['w'] || this.keys['ц']) dy -= 1;
@@ -165,7 +193,15 @@ class Game {
         if (dx !== 0 || dy !== 0) this.player.move(dx, dy, this.map);
         else this.player.isMoving = false;
 
-        // === НОВОЕ: HUD обновляется КАЖДЫЙ КАДР ===
+        // === НОВОЕ: Обновление всплывающих чисел ===
+        for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
+            this.damageNumbers[i].timer++;
+            this.damageNumbers[i].y -= 1.2; // Летит вверх
+            if (this.damageNumbers[i].timer >= this.damageNumbers[i].maxTimer) {
+                this.damageNumbers.splice(i, 1);
+            }
+        }
+
         this.ui.updateHUD();
     }
 
@@ -182,6 +218,35 @@ class Game {
 
         for (const enemy of this.enemies) this.enemyRenderer.render(this.ctx, enemy);
         this.playerRenderer.render(this.ctx, this.player);
+
+        // === НОВОЕ: Отрисовка всплывающих чисел ===
+        this.renderDamageNumbers();
+    }
+
+    // === НОВОЕ: Рендер всплывающих чисел ===
+    renderDamageNumbers() {
+        for (const num of this.damageNumbers) {
+            const t = num.timer / num.maxTimer;
+            const alpha = 1 - t; // Угасает
+            const scale = 1 + t * 0.5; // Увеличивается
+
+            this.ctx.save();
+            this.ctx.globalAlpha = alpha;
+            this.ctx.font = `bold ${Math.floor(18 * scale)}px sans-serif`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+
+            // Обводка для читаемости
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(`-${num.value}`, num.x, num.y);
+
+            // Сам текст
+            this.ctx.fillStyle = num.color;
+            this.ctx.fillText(`-${num.value}`, num.x, num.y);
+
+            this.ctx.restore();
+        }
     }
 
     loop() {
