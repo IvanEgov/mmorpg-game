@@ -33,8 +33,16 @@
         const count = this.dungeonId === 'dungeon_1' ? 5 : 4;
 
         for (let i = 0; i < count; i++) {
-            const x = (5 + Math.random() * 20) * CONSTANTS.TILE_SIZE;
-            const y = (5 + Math.random() * 10) * CONSTANTS.TILE_SIZE;
+            // === ИСПРАВЛЕНО: Спавним врагов только на проходимых тайлах ===
+            let x, y;
+            let attempts = 0;
+            do {
+                x = (3 + Math.random() * 24) * CONSTANTS.TILE_SIZE;
+                y = (3 + Math.random() * 14) * CONSTANTS.TILE_SIZE;
+                attempts++;
+                if (attempts > 50) break; // Защита от бесконечного цикла
+            } while (!this.isWalkable(x, y));
+
             this.entities.push(new Enemy(x, y, enemyType));
         }
     }

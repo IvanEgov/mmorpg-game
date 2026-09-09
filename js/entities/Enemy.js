@@ -23,7 +23,7 @@ class Enemy {
         this.minDistance = 40; // Не подходит ближе 40 пикселей
     }
 
-    update(player, map) {
+    update(player, location) {
         if (this.isDead) return;
         if (this.hitFlash > 0) this.hitFlash--;
         if (this.attackCooldown > 0) this.attackCooldown--;
@@ -57,8 +57,9 @@ class Enemy {
             const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
             const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
+            // === ИСПРАВЛЕНО: Проверяем границы карты ===
             if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
-                if (map[tileY][tileX] !== 1) {
+                if (location.map[tileY] && location.map[tileY][tileX] !== 7) {
                     this.x = newX;
                     this.y = newY;
                 }

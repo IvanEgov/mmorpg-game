@@ -201,7 +201,7 @@ class Game {
         window.addEventListener('mouseup', end);
     }
 
-    update() {
+        update() {
         if (this.ui.activePanel) return;
         this.player.update();
 
@@ -225,16 +225,9 @@ class Game {
         if (this.keys['d'] || this.keys['в']) dx += 1;
         if (this.joystickActive) { dx = this.joystickX; dy = this.joystickY; }
 
+        // === ИСПРАВЛЕНО: Используем player.move() для корректного обновления direction ===
         if (dx !== 0 || dy !== 0) {
-            const newX = this.player.x + dx * (this.player.speed / CONSTANTS.PLAYER_SPEED);
-            const newY = this.player.y + dy * (this.player.speed / CONSTANTS.PLAYER_SPEED);
-            if (this.currentLocation.isWalkable(newX, newY)) {
-                this.player.x = newX;
-                this.player.y = newY;
-                this.player.isMoving = true;
-            } else {
-                this.player.isMoving = false;
-            }
+            this.player.move(dx, dy, this.currentLocation.map);
         } else {
             this.player.isMoving = false;
         }

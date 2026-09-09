@@ -124,10 +124,17 @@ class Player {
         const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
         const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
+        // === ИСПРАВЛЕНО: Проверяем границы карты ===
         if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
-            if (map[tileY][tileX] !== 1) {
-                this.x = newX; this.y = newY; this.isMoving = true;
-            } else this.isMoving = false;
+            if (map[tileY] && map[tileY][tileX] !== 1 && map[tileY][tileX] !== 7) {
+                this.x = newX;
+                this.y = newY;
+                this.isMoving = true;
+            } else {
+                this.isMoving = false;
+            }
+        } else {
+            this.isMoving = false;
         }
     }
 
