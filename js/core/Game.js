@@ -6,47 +6,59 @@ class Game {
         this.playerRenderer = new PlayerRenderer();
         this.enemyRenderer = new EnemyRenderer();
         this.ui = new UIManager(this.player);
-        this.map = this.generateTestMap();
-        this.enemies = [];
         this.keys = {};
         this.joystickActive = false;
         this.joystickX = 0;
         this.joystickY = 0;
         this.lastTime = 0;
-
-        // === НОВОЕ: Всплывающие числа урона ===
         this.damageNumbers = [];
 
+        // === СИСТЕМА ЛОКАЦИЙ ===
+        this.locations = {
+            'city': new CityLocation(),
+            'dungeon_1': null,
+            'dungeon_2': null
+        };
+        this.currentLocationId = 'city';
+        this.currentLocation = this.locations['city'];
+
         window.gameInstance = this;
-        this.spawnEnemies();
         this.setupInput();
         this.setupJoystick();
         this.ui.updateHUD();
+
+        console.log('✅ Игра загружена! Локация:', this.currentLocation.name);
     }
 
-    generateTestMap() {
-        const map = [];
-        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
-            map[y] = [];
-            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
-                if (x === 0 || y === 0 || x === CONSTANTS.MAP_WIDTH - 1 || y === CONSTANTS.MAP_HEIGHT - 1) map[y][x] = 1;
-                else if (x === 10 && y > 5 && y < 15) map[y][x] = 1;
-                else map[y][x] = 0;
-            }
+    changeLocation(locationId) {
+        console.log(`🌀 Переход в: ${locationId}`);
+
+        // Создаём данж при первом входе
+        if (locationId.startsWith('dungeon_') && !this.locations[locationId]) {
+            this.locations[locationId] = new DungeonLocation(locationId);
         }
-        return map;
-    }
 
-    spawnEnemies() {
-        this.enemies.push(new Enemy(5 * CONSTANTS.TILE_SIZE, 5 * CONSTANTS.TILE_SIZE, 'slime'));
-        this.enemies.push(new Enemy(20 * CONSTANTS.TILE_SIZE, 8 * CONSTANTS.TILE_SIZE, 'slime'));
-        this.enemies.push(new Enemy(15 * CONSTANTS.TILE_SIZE, 15 * CONSTANTS.TILE_SIZE, 'slime'));
+        this.currentLocationId = locationId;
+        this.currentLocation = this.locations[locationId];
+
+        // Позиционируем игрока
+        if (locationId === 'city') {
+            this.player.x = 15 * CONSTANTS.TILE_SIZE;
+            this.player.y = 10 * CONSTANTS.TILE_SIZE;
+        } else {
+            this.player.x = 3 * CONSTANTS.TILE_SIZE;
+            this.player.y = 3 * CONSTANTS.TILE_SIZE;
+        }
+
+        // Обновляем HUD с названием локации
+        document.getElementById('location-name').textContent = this.currentLocation.name;
     }
 
     setupInput() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
             if (e.code === 'Space') { e.preventDefault(); this.performAttack(); }
+            if (e.key.toLowerCase() === 'e' || e.key === 'у') this.interact();
             if (e.key.toLowerCase() === 'i' || e.key === 'ш') this.ui.toggle('panel-inventory');
             if (e.key.toLowerCase() === 'c' || e.key === 'с') {
                 this.ui.toggle('panel-stats');
@@ -73,9 +85,23 @@ class Game {
         atkBtn.ontouchstart = (e) => { e.preventDefault(); this.performAttack(); };
         atkBtn.onclick = () => this.performAttack();
 
+        // Кнопка взаимодействия
+        const interactBtn = document.getElementById('btn-interact');
+        interactBtn.ontouchstart = (e) => { e.preventDefault(); this.interact(); };
+        interactBtn.onclick = () => this.interact();
+
         document.getElementById('close-inv').onclick = () => this.ui.toggle('panel-inventory');
         document.getElementById('close-stats').onclick = () => this.ui.toggle('panel-stats');
         document.getElementById('close-skills').onclick = () => this.ui.toggle('panel-skills');
+        document.getElementById('close-npc').onclick = () => this.ui.closePanel('panel-npc');
+        document.getElementById('close-shop').onclick = () => this.ui.closePanel('panel-shop');
+        document.getElementById('close-quests').onclick = () => this.ui.closePanel('panel-quests');
+        document.getElementById('close-storage').onclick = () => this.ui.closePanel('panel-storage');
+        document.getElementById('close-deposit').onclick = () => this.ui.closePanel('panel-deposit');
+    }
+
+    interact() {
+        this.player.tryInteract(this.currentLocation, this);
     }
 
     bindStatButtons() {
@@ -89,7 +115,6 @@ class Game {
         });
     }
 
-    // === НОВОЕ: Добавить всплывающее число ===
     addDamageNumber(x, y, value, color) {
         this.damageNumbers.push({
             x: x + CONSTANTS.TILE_SIZE / 2 + (Math.random() - 0.5) * 20,
@@ -97,30 +122,36 @@ class Game {
             value: value,
             color: color || '#fff',
             timer: 0,
-            maxTimer: 45 // 0.75 секунды
+            maxTimer: 45
         });
     }
 
     performAttack() {
-        const result = this.player.attack(this.enemies);
+        const enemies = this.currentLocation.entities.filter(e => e instanceof Enemy);
+        const result = this.player.attack(enemies);
         if (result) {
-            // Всплывающий урон по врагу (жёлтый)
             this.addDamageNumber(result.enemy.x, result.enemy.y - 10, result.damage, '#ffe066');
 
             if (result.killed) {
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
                 const loot = result.enemy.getLoot();
-                loot.forEach(itemId => this.player.addItem(itemId));
+                loot.forEach(itemId => {
+                    this.player.addItem(itemId);
+                    // Обновляем прогресс квестов
+                    if (this.player.activeQuests) {
+                        this.player.activeQuests.forEach(q => {
+                            const questData = CONSTANTS.QUESTS[q.id];
+                            if (questData.target === result.enemy.type) {
+                                q.progress = (q.progress || 0) + 1;
+                            } else if (questData.target === itemId) {
+                                q.progress = (q.progress || 0) + 1;
+                            }
+                        });
+                    }
+                });
                 setTimeout(() => {
-                    this.enemies = this.enemies.filter(e => e !== result.enemy);
-                    setTimeout(() => {
-                        this.enemies.push(new Enemy(
-                            (5 + Math.random() * 20) * CONSTANTS.TILE_SIZE,
-                            (5 + Math.random() * 10) * CONSTANTS.TILE_SIZE,
-                            'slime'
-                        ));
-                    }, 3000);
+                    this.currentLocation.entities = this.currentLocation.entities.filter(e => e !== result.enemy);
                 }, 500);
                 this.ui.updateHUD();
             }
@@ -174,12 +205,16 @@ class Game {
         if (this.ui.activePanel) return;
         this.player.update();
 
+        // Обновляем текущую локацию
+        this.currentLocation.update(this.player);
+
         // Обновляем врагов и ловим их атаки
-        for (const enemy of this.enemies) {
-            const attackResult = enemy.update(this.player, this.map);
-            if (attackResult) {
-                // Всплывающий урон по игроку (красный)
-                this.addDamageNumber(attackResult.targetX, attackResult.targetY - 10, attackResult.damage, '#ff4444');
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Enemy) {
+                const attackResult = entity.update(this.player, this.currentLocation);
+                if (attackResult) {
+                    this.addDamageNumber(attackResult.targetX, attackResult.targetY - 10, attackResult.damage, '#ff4444');
+                }
             }
         }
 
@@ -190,13 +225,24 @@ class Game {
         if (this.keys['d'] || this.keys['в']) dx += 1;
         if (this.joystickActive) { dx = this.joystickX; dy = this.joystickY; }
 
-        if (dx !== 0 || dy !== 0) this.player.move(dx, dy, this.map);
-        else this.player.isMoving = false;
+        if (dx !== 0 || dy !== 0) {
+            const newX = this.player.x + dx * (this.player.speed / CONSTANTS.PLAYER_SPEED);
+            const newY = this.player.y + dy * (this.player.speed / CONSTANTS.PLAYER_SPEED);
+            if (this.currentLocation.isWalkable(newX, newY)) {
+                this.player.x = newX;
+                this.player.y = newY;
+                this.player.isMoving = true;
+            } else {
+                this.player.isMoving = false;
+            }
+        } else {
+            this.player.isMoving = false;
+        }
 
-        // === НОВОЕ: Обновление всплывающих чисел ===
+        // Обновление всплывающих чисел
         for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
             this.damageNumbers[i].timer++;
-            this.damageNumbers[i].y -= 1.2; // Летит вверх
+            this.damageNumbers[i].y -= 1.2;
             if (this.damageNumbers[i].timer >= this.damageNumbers[i].maxTimer) {
                 this.damageNumbers.splice(i, 1);
             }
@@ -209,26 +255,25 @@ class Game {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
-            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
-                this.ctx.fillStyle = this.map[y][x] === 1 ? CONSTANTS.COLORS.WALL : CONSTANTS.COLORS.GRASS;
-                this.ctx.fillRect(x * CONSTANTS.TILE_SIZE, y * CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE);
+        // Рендер текущей локации
+        this.currentLocation.render(this.ctx);
+
+        // Рендер врагов (отдельно, чтобы они были поверх)
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Enemy) {
+                this.enemyRenderer.render(this.ctx, entity);
             }
         }
 
-        for (const enemy of this.enemies) this.enemyRenderer.render(this.ctx, enemy);
         this.playerRenderer.render(this.ctx, this.player);
-
-        // === НОВОЕ: Отрисовка всплывающих чисел ===
         this.renderDamageNumbers();
     }
 
-    // === НОВОЕ: Рендер всплывающих чисел ===
     renderDamageNumbers() {
         for (const num of this.damageNumbers) {
             const t = num.timer / num.maxTimer;
-            const alpha = 1 - t; // Угасает
-            const scale = 1 + t * 0.5; // Увеличивается
+            const alpha = 1 - t;
+            const scale = 1 + t * 0.5;
 
             this.ctx.save();
             this.ctx.globalAlpha = alpha;
@@ -236,12 +281,10 @@ class Game {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
 
-            // Обводка для читаемости
             this.ctx.strokeStyle = '#000';
             this.ctx.lineWidth = 3;
             this.ctx.strokeText(`-${num.value}`, num.x, num.y);
 
-            // Сам текст
             this.ctx.fillStyle = num.color;
             this.ctx.fillText(`-${num.value}`, num.x, num.y);
 

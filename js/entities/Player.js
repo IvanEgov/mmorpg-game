@@ -215,4 +215,18 @@ class Player {
             if (this.mp < this.maxMp) this.mp = Math.min(this.maxMp, this.mp + this.REGEN_MP);
         }
     }
+    tryInteract(location, game) {
+        for (const entity of location.entities) {
+            if (entity instanceof NPC || entity instanceof Portal) {
+                const dx = entity.x - this.x;
+                const dy = entity.y - this.y;
+                const distance = Math.hypot(dx, dy);
+                if (distance < CONSTANTS.INTERACT_RANGE) {
+                    entity.interact(this, game);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

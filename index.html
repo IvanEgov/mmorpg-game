@@ -13,21 +13,21 @@
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
         <div class="stat">💰 <span id="gold">50</span></div>
+        <div class="stat">📍 <span id="location-name">🏰 Стартовый город</span></div>
         <div class="xp-bar-container">
             <div id="xp-bar-fill" style="width: 0%;"></div>
             <span id="xp-text">0 / 100 XP</span>
         </div>
     </div>
 
-    <!-- Кнопки меню (видны всегда) -->
     <div id="menu-buttons">
         <button id="btn-inv">🎒</button>
         <button id="btn-stats">📊</button>
         <button id="btn-skills">🌳</button>
+        <button id="btn-interact">💬</button>
         <button id="btn-attack">⚔️</button>
     </div>
 
-    <!-- Мобильный джойстик -->
     <div id="mobile-controls">
         <div id="joystick-container">
             <div id="joystick-base"></div>
@@ -66,11 +66,47 @@
         <button class="btn-close" id="close-skills">Закрыть</button>
     </div>
 
+    <!-- НОВЫЕ ПАНЕЛИ -->
+    <div id="panel-npc" class="game-panel hidden">
+        <h2 id="npc-name">NPC</h2>
+        <div id="npc-options"></div>
+        <button class="btn-close" id="close-npc">Закрыть</button>
+    </div>
+
+    <div id="panel-shop" class="game-panel hidden">
+        <h2>🏪 Магазин</h2>
+        <div id="shop-list" class="list-container"></div>
+        <button class="btn-close" id="close-shop">Закрыть</button>
+    </div>
+
+    <div id="panel-quests" class="game-panel hidden">
+        <h2>📜 Квесты</h2>
+        <div id="quest-list" class="list-container"></div>
+        <button class="btn-close" id="close-quests">Закрыть</button>
+    </div>
+
+    <div id="panel-storage" class="game-panel hidden">
+        <h2>📦 Хранилище</h2>
+        <div id="storage-list" class="list-container"></div>
+        <button class="btn-close" id="close-storage">Закрыть</button>
+    </div>
+
+    <div id="panel-deposit" class="game-panel hidden">
+        <h2>📥 Положить в хранилище</h2>
+        <div id="deposit-list" class="list-container"></div>
+        <button class="btn-close" id="close-deposit">Назад</button>
+    </div>
+
     <script src="js/data/constants.js"></script>
+    <script src="js/locations/Location.js"></script>
+    <script src="js/locations/CityLocation.js"></script>
+    <script src="js/locations/DungeonLocation.js"></script>
     <script src="js/entities/Player.js"></script>
     <script src="js/entities/PlayerRenderer.js"></script>
     <script src="js/entities/Enemy.js"></script>
     <script src="js/entities/EnemyRenderer.js"></script>
+    <script src="js/entities/NPC.js"></script>
+    <script src="js/entities/Portal.js"></script>
     <script src="js/core/UIManager.js"></script>
     <script src="js/core/Game.js"></script>
     <script src="js/main.js"></script>
