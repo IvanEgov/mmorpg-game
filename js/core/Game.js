@@ -12,13 +12,21 @@ class Game {
         
         this.map = this.generateTestMap();
         this.keys = {};
-        this.setupInput();
+        
+        // Для джойстика
+        this.joystickActive = false;
+        this.joystickX = 0;
+        this.joystickY = 0;
         
         this.lastTime = 0;
-        this.ui.updateHUD(); // Инициализация HUD
+        this.ui.updateHUD();
         
-        // ВАЖНО: Делаем экземпляр доступным глобально для onclick в HTML
+        // ВАЖНО: Делаем экземпляр доступным глобально
         window.gameInstance = this;
+        
+        this.setupInput();
+        this.setupJoystick();
+        this.setupMobileMenu();
     }
 
     generateTestMap() {
@@ -35,7 +43,6 @@ class Game {
     }
 
     setupInput() {
-        // Клавиатура
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
             if (e.key.toLowerCase() === 'i') this.ui.toggle('panel-inventory');
@@ -45,7 +52,6 @@ class Game {
                 document.querySelectorAll('.game-panel').forEach(p => p.classList.add('hidden'));
                 this.ui.activePanel = null;
             }
-            // ТЕСТ: Пробел дает 50 опыта (чтобы ты мог протестировать уровень)
             if (e.code === 'Space') {
                 this.player.gainXp(50);
                 this.ui.updateHUD();
@@ -55,39 +61,120 @@ class Game {
             this.keys[e.key.toLowerCase()] = false;
         });
 
-        // Мобильное управление (Touch)
-        const touchBtns = document.querySelectorAll('.d-btn, .action-btn');
-        touchBtns.forEach(btn => {
+        // Кнопка атаки (мобильная)
+        const actionBtn = document.querySelector('.action-btn');
+        if (actionBtn) {
+            actionBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.player.gainXp(50);
+                this.ui.updateHUD();
+                actionBtn.classList.add('pressed');
+            }, { passive: false });
+            actionBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                actionBtn.classList.remove('pressed');
+            }, { passive: false });
+        }
+    }
+
+    // --- ВИРТУАЛЬНЫЙ ДЖОЙСТИК ---
+    setupJoystick() {
+        const base = document.getElementById('joystick-base');
+        const stick = document.getElementById('joystick-stick');
+        
+        if (!base || !stick) return;
+
+        let baseRect = null;
+        let centerX = 0, centerY = 0;
+        const maxDistance = 40; // Максимальное отклонение стика
+
+        const startJoystick = (e) => {
+            e.preventDefault();
+            this.joystickActive = true;
+            baseRect = base.getBoundingClientRect();
+            centerX = baseRect.left + baseRect.width / 2;
+            centerY = baseRect.top + baseRect.height / 2;
+            updateJoystick(e);
+        };
+
+        const updateJoystick = (e) => {
+            if (!this.joystickActive) return;
+            e.preventDefault();
+
+            const touch = e.touches ? e.touches[0] : e;
+            const deltaX = touch.clientX - centerX;
+            const deltaY = touch.clientY - centerY;
+            const distance = Math.min(Math.hypot(deltaX, deltaY), maxDistance);
+            const angle = Math.atan2(deltaY, deltaX);
+
+            const stickX = Math.cos(angle) * distance;
+            const stickY = Math.sin(angle) * distance;
+
+            stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+
+            // Нормализуем для движения (-1 до 1)
+            this.joystickX = stickX / maxDistance;
+            this.joystickY = stickY / maxDistance;
+        };
+
+        const endJoystick = (e) => {
+            e.preventDefault();
+            this.joystickActive = false;
+            this.joystickX = 0;
+            this.joystickY = 0;
+            stick.style.transform = 'translate(0px, 0px)';
+        };
+
+        // Touch события
+        base.addEventListener('touchstart', startJoystick, { passive: false });
+        base.addEventListener('touchmove', updateJoystick, { passive: false });
+        base.addEventListener('touchend', endJoystick, { passive: false });
+        base.addEventListener('touchcancel', endJoystick, { passive: false });
+
+        // Mouse события (для тестирования на ПК)
+        base.addEventListener('mousedown', startJoystick);
+        window.addEventListener('mousemove', (e) => {
+            if (this.joystickActive) updateJoystick(e);
+        });
+        window.addEventListener('mouseup', endJoystick);
+    }
+
+    // --- МОБИЛЬНЫЕ КНОПКИ МЕНЮ ---
+    setupMobileMenu() {
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        menuBtns.forEach(btn => {
             btn.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Предотвращает зум и скролл
-                const key = btn.getAttribute('data-key');
-                this.keys[key] = true;
-                btn.classList.add('pressed');
-                
-                if (key === ' ') { // Кнопка действия
-                    this.player.gainXp(50); // Тест: даем опыт при нажатии
-                    this.ui.updateHUD();
-                }
+                e.preventDefault();
+                const panelId = btn.getAttribute('data-panel');
+                this.ui.toggle(panelId);
             }, { passive: false });
 
-            btn.addEventListener('touchend', (e) => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const key = btn.getAttribute('data-key');
-                this.keys[key] = false;
-                btn.classList.remove('pressed');
-            }, { passive: false });
+                const panelId = btn.getAttribute('data-panel');
+                this.ui.toggle(panelId);
+            });
         });
     }
 
     update(deltaTime) {
-        if (this.ui.activePanel) return; // Пауза при открытом меню
+        if (this.ui.activePanel) return;
 
         this.player.update();
+        
         let dx = 0, dy = 0;
+        
+        // Клавиатура
         if (this.keys['w'] || this.keys['ц']) dy -= 1;
         if (this.keys['s'] || this.keys['ы']) dy += 1;
         if (this.keys['a'] || this.keys['ф']) dx -= 1;
         if (this.keys['d'] || this.keys['в']) dx += 1;
+        
+        // Джойстик (если активен и есть движение)
+        if (this.joystickActive && (Math.abs(this.joystickX) > 0.2 || Math.abs(this.joystickY) > 0.2)) {
+            dx = this.joystickX;
+            dy = this.joystickY;
+        }
 
         if (dx !== 0 || dy !== 0) {
             this.player.move(dx, dy, this.map);

@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- ВАЖНО для мобильных: запрещает зум и подстраивает ширину -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dungeon Chronicles — 2D MMORPG</title>
     <link rel="stylesheet" href="style.css">
@@ -14,7 +13,6 @@
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
         <div class="stat">💰 <span id="gold">50</span></div>
-        <!-- Шкала опыта -->
         <div class="xp-bar-container">
             <div id="xp-bar-fill" style="width: 0%;"></div>
             <span id="xp-text">0 / 100 XP</span>
@@ -24,27 +22,32 @@
         </div>
     </div>
 
-    <!-- Мобильное управление (видимо только на узких экранах) -->
+    <!-- Мобильное управление -->
     <div id="mobile-controls">
-        <div class="d-pad">
-            <button class="d-btn up" data-key="w">▲</button>
-            <div class="d-row">
-                <button class="d-btn left" data-key="a">◀</button>
-                <button class="d-btn right" data-key="d">▶</button>
-            </div>
-            <button class="d-btn down" data-key="s">▼</button>
+        <!-- Виртуальный джойстик -->
+        <div id="joystick-container">
+            <div id="joystick-base"></div>
+            <div id="joystick-stick"></div>
         </div>
+        
+        <!-- Кнопки меню (ТЕПЕРЬ ВИДНЫ!) -->
+        <div id="mobile-menu-buttons">
+            <button class="menu-btn" data-panel="panel-inventory">🎒</button>
+            <button class="menu-btn" data-panel="panel-stats">📊</button>
+            <button class="menu-btn" data-panel="panel-skills">🌳</button>
+        </div>
+        
+        <!-- Кнопка атаки -->
         <button class="action-btn" data-key=" ">⚔️</button>
     </div>
 
-    <!-- Панель Инвентаря -->
+    <!-- Панели остаются без изменений -->
     <div id="panel-inventory" class="game-panel hidden">
         <h2>🎒 Инвентарь</h2>
         <div id="inventory-list" class="list-container"></div>
         <button class="btn-close" onclick="window.gameInstance.ui.toggle('panel-inventory')">Закрыть</button>
     </div>
 
-    <!-- Панель Характеристик -->
     <div id="panel-stats" class="game-panel hidden">
         <h2>📊 Характеристики <span style="color: #f1c40f;">(Очков: <span id="stat-points">0</span>)</span></h2>
         <div class="stats-grid">
@@ -63,7 +66,6 @@
         <button class="btn-close" onclick="window.gameInstance.ui.toggle('panel-stats')">Закрыть</button>
     </div>
 
-    <!-- Панель Навыков -->
     <div id="panel-skills" class="game-panel hidden">
         <h2>🌳 Навыки <span style="color: #3498db;">(Очков: <span id="skill-points-display">0</span>)</span></h2>
         <div id="skills-list" class="list-container"></div>
