@@ -33,9 +33,14 @@ class Game {
     changeLocation(locationId) {
         console.log(`🌀 Переход в: ${locationId}`);
 
-        // Создаём данж при первом входе
-        if (locationId.startsWith('dungeon_') && !this.locations[locationId]) {
+        // === ИСПРАВЛЕНО: Данжи всегда пересоздаются заново ===
+        if (locationId.startsWith('dungeon_')) {
+            // Удаляем старую локацию из кэша, чтобы мобы появились заново
             this.locations[locationId] = new DungeonLocation(locationId);
+            console.log(`🔄 Данж ${locationId} пересоздан с новыми мобами!`);
+        } else if (locationId === 'city' && !this.locations['city']) {
+            // Город создаётся только один раз (чтобы NPC и хранилище сохранялись)
+            this.locations['city'] = new CityLocation();
         }
 
         this.currentLocationId = locationId;
@@ -43,9 +48,11 @@ class Game {
 
         // Позиционируем игрока
         if (locationId === 'city') {
+            // Возвращаемся в центр города
             this.player.x = 15 * CONSTANTS.TILE_SIZE;
             this.player.y = 10 * CONSTANTS.TILE_SIZE;
         } else {
+            // Появляемся у входа в данж
             this.player.x = 3 * CONSTANTS.TILE_SIZE;
             this.player.y = 3 * CONSTANTS.TILE_SIZE;
         }
