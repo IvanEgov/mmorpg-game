@@ -8,12 +8,13 @@ class Game {
         
         this.player = new Player(startX, startY);
         this.playerRenderer = new PlayerRenderer();
+        this.enemyRenderer = new EnemyRenderer();
         this.ui = new UIManager(this.player);
         
         this.map = this.generateTestMap();
+        this.enemies = [];
         this.keys = {};
         
-        // Для джойстика
         this.joystickActive = false;
         this.joystickX = 0;
         this.joystickY = 0;
@@ -21,9 +22,9 @@ class Game {
         this.lastTime = 0;
         this.ui.updateHUD();
         
-        // ВАЖНО: Делаем экземпляр доступным глобально
         window.gameInstance = this;
         
+        this.spawnEnemies(); // Спавним врагов
         this.setupInput();
         this.setupJoystick();
         this.setupMobileMenu();
@@ -42,6 +43,13 @@ class Game {
         return map;
     }
 
+    spawnEnemies() {
+        // Спавним 3 слайма в разных местах карты
+        this.enemies.push(new Enemy(5 * CONSTANTS.TILE_SIZE, 5 * CONSTANTS.TILE_SIZE, 'slime'));
+        this.enemies.push(new Enemy(20 * CONSTANTS.TILE_SIZE, 8 * CONSTANTS.TILE_SIZE, 'slime'));
+        this.enemies.push(new Enemy(15 * CONSTANTS.TILE_SIZE, 15 * CONSTANTS.TILE_SIZE, 'slime'));
+    }
+
     setupInput() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
@@ -52,9 +60,10 @@ class Game {
                 document.querySelectorAll('.game-panel').forEach(p => p.classList.add('hidden'));
                 this.ui.activePanel = null;
             }
+            // Атака по пробелу
             if (e.code === 'Space') {
-                this.player.gainXp(50);
-                this.ui.updateHUD();
+                e.preventDefault();
+                this.performAttack();
             }
         });
         window.addEventListener('keyup', (e) => {
@@ -66,8 +75,7 @@ class Game {
         if (actionBtn) {
             actionBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                this.player.gainXp(50);
-                this.ui.updateHUD();
+                this.performAttack();
                 actionBtn.classList.add('pressed');
             }, { passive: false });
             actionBtn.addEventListener('touchend', (e) => {
@@ -77,7 +85,47 @@ class Game {
         }
     }
 
-    // --- ВИРТУАЛЬНЫЙ ДЖОЙСТИК ---
+    performAttack() {
+        const result = this.player.attack(this.enemies);
+        
+        if (result) {
+            console.log(`⚔️ Атака! Урон: ${result.damage}`);
+            
+            if (result.killed) {
+                console.log(`💀 ${result.enemy.name} убит!`);
+                
+                // Награды
+                this.player.gainXp(result.enemy.xpReward);
+                this.player.gold += result.enemy.goldReward;
+                console.log(`+${result.enemy.xpReward} XP, +${result.enemy.goldReward} 💰`);
+                
+                // Лут
+                const loot = result.enemy.getLoot();
+                loot.forEach(itemId => {
+                    this.player.addItem(itemId);
+                    console.log(`🎁 Получен предмет: ${CONSTANTS.ITEMS[itemId].name}`);
+                });
+                
+                // Удаляем убитого врага из массива (через 1 секунду для анимации)
+                setTimeout(() => {
+                    this.enemies = this.enemies.filter(e => e !== result.enemy);
+                    
+                    // Респавн нового врага через 5 секунд
+                    setTimeout(() => {
+                        const spawnX = (5 + Math.random() * 20) * CONSTANTS.TILE_SIZE;
+                        const spawnY = (5 + Math.random() * 10) * CONSTANTS.TILE_SIZE;
+                        this.enemies.push(new Enemy(spawnX, spawnY, 'slime'));
+                        console.log('🔄 Новый слайм появился!');
+                    }, 5000);
+                }, 1000);
+                
+                this.ui.updateHUD();
+            }
+        } else {
+            console.log('Нет цели в радиусе атаки');
+        }
+    }
+
     setupJoystick() {
         const base = document.getElementById('joystick-base');
         const stick = document.getElementById('joystick-stick');
@@ -86,7 +134,7 @@ class Game {
 
         let baseRect = null;
         let centerX = 0, centerY = 0;
-        const maxDistance = 40; // Максимальное отклонение стика
+        const maxDistance = 40;
 
         const startJoystick = (e) => {
             e.preventDefault();
@@ -112,7 +160,6 @@ class Game {
 
             stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
 
-            // Нормализуем для движения (-1 до 1)
             this.joystickX = stickX / maxDistance;
             this.joystickY = stickY / maxDistance;
         };
@@ -125,13 +172,11 @@ class Game {
             stick.style.transform = 'translate(0px, 0px)';
         };
 
-        // Touch события
         base.addEventListener('touchstart', startJoystick, { passive: false });
         base.addEventListener('touchmove', updateJoystick, { passive: false });
         base.addEventListener('touchend', endJoystick, { passive: false });
         base.addEventListener('touchcancel', endJoystick, { passive: false });
 
-        // Mouse события (для тестирования на ПК)
         base.addEventListener('mousedown', startJoystick);
         window.addEventListener('mousemove', (e) => {
             if (this.joystickActive) updateJoystick(e);
@@ -139,7 +184,6 @@ class Game {
         window.addEventListener('mouseup', endJoystick);
     }
 
-    // --- МОБИЛЬНЫЕ КНОПКИ МЕНЮ ---
     setupMobileMenu() {
         const menuBtns = document.querySelectorAll('.menu-btn');
         menuBtns.forEach(btn => {
@@ -162,15 +206,18 @@ class Game {
 
         this.player.update();
         
+        // Обновляем всех врагов
+        for (const enemy of this.enemies) {
+            enemy.update(this.player, this.map);
+        }
+
         let dx = 0, dy = 0;
         
-        // Клавиатура
         if (this.keys['w'] || this.keys['ц']) dy -= 1;
         if (this.keys['s'] || this.keys['ы']) dy += 1;
         if (this.keys['a'] || this.keys['ф']) dx -= 1;
         if (this.keys['d'] || this.keys['в']) dx += 1;
         
-        // Джойстик (если активен и есть движение)
         if (this.joystickActive && (Math.abs(this.joystickX) > 0.2 || Math.abs(this.joystickY) > 0.2)) {
             dx = this.joystickX;
             dy = this.joystickY;
@@ -194,6 +241,12 @@ class Game {
                 this.ctx.fillRect(x * CONSTANTS.TILE_SIZE, y * CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE, CONSTANTS.TILE_SIZE);
             }
         }
+
+        // Рендерим врагов
+        for (const enemy of this.enemies) {
+            this.enemyRenderer.render(this.ctx, enemy);
+        }
+
         this.playerRenderer.render(this.ctx, this.player);
     }
 
