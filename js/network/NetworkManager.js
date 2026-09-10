@@ -3,14 +3,15 @@
         this.game = game;
 
         // 🆕 1. ПОСТОЯННЫЙ ID: Проверяем, есть ли уже сохранённый ID
-        let savedId = localStorage.getItem('mmorpg_player_id');
+        // 🆕 ИСПРАВЛЕНО: Используем sessionStorage (уникален для каждой вкладки!)
+        let savedId = sessionStorage.getItem('mmorpg_player_id');
         if (savedId) {
             this.playerId = savedId;
-            console.log('🆔 Используется сохранённый ID игрока:', this.playerId);
+            console.log('🆔 Мой ID (эта вкладка):', this.playerId);
         } else {
-            this.playerId = 'player_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('mmorpg_player_id', this.playerId);
-            console.log('🆔 Создан и сохранён новый ID игрока:', this.playerId);
+            this.playerId = 'player_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
+            sessionStorage.setItem('mmorpg_player_id', this.playerId);
+            console.log('🆔 Создан новый ID для этой вкладки:', this.playerId);
         }
 
         this.playerName = 'Герой';
