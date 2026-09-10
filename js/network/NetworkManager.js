@@ -41,13 +41,15 @@
                     for (const [id, playerData] of Object.entries(data)) {
                         if (id === this.playerId) continue; // Пропускаем себя
 
-                        // Удаляем игроков, которые не обновляли статус более 10 секунд (вышли из игры)
+                        // Удаляем игроков, которые не обновляли статус более 10 секунд
                         if (now - playerData.lastSeen > 10000) continue;
 
                         this.otherPlayers[id] = playerData;
                     }
                 }
 
+                // 🆕 ДИАГНОСТИКА: смотрим, кого мы получили из сети
+                console.log('📡 Данные из сети:', this.otherPlayers);
                 this.updateOnlineCount();
             });
 

@@ -40,27 +40,37 @@ class Game {
     }
 
     // НОВОЕ: Обновление других игроков из сети
-    syncOtherPlayers() {
+       syncOtherPlayers() {
         if (!this.network.connected) return;
 
-        // Удаляем игроков, которых больше нет в сети
+        // 1. Удаляем игроков, которых больше нет в сети или они не в этой локации
         for (const id in this.otherPlayers) {
-            if (!this.network.otherPlayers[id] ||
-                this.network.otherPlayers[id].locationId !== this.currentLocationId) {
+            const netData = this.network.otherPlayers[id];
+            if (!netData || netData.locationId !== this.currentLocationId) {
                 delete this.otherPlayers[id];
             }
         }
 
-        // Добавляем/обновляем игроков в текущей локации
+        // 2. Добавляем/обновляем игроков в текущей локации
         for (const [id, data] of Object.entries(this.network.otherPlayers)) {
-            if (data.locationId !== this.currentLocationId) continue;
-
+            // 🆕 ДИАГНОСТИКА: проверяем совпадение локаций
+            console.log(`🔍 Проверка: Игрок ${data.name} находится в "${data.locationId}", а я в "${this.currentLocationId}"`);
+            
+            if (data.locationId !== this.currentLocationId) {
+                console.log(`⏩ Игрок ${data.name} в другой локации, не рисуем его.`);
+                continue;
+            }
+            
             if (this.otherPlayers[id]) {
                 this.otherPlayers[id].updateFromNetwork(data);
             } else {
+                console.log(`✅ ДОБАВЛЕН НОВЫЙ ИГРОК для рендера: ${data.name} на координатах X:${data.x} Y:${data.y}`);
                 this.otherPlayers[id] = new OtherPlayer(id, data);
             }
         }
+        
+        // 🆕 ДИАГНОСТИКА: кого мы в итоге решили рисовать
+        console.log('🎨 Игроки, готовые к отрисовке:', Object.keys(this.otherPlayers));
     }
 
     // === НОВОЕ: Сохранение игры ===
