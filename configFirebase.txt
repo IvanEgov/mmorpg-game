@@ -1,0 +1,25 @@
+npm install firebase
+
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCbD8mBeil89NsnP2BUBeJpNXztU-jCyl8",
+  authDomain: "mmorpg-game-c3469.firebaseapp.com",
+  databaseURL: "https://mmorpg-game-c3469-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mmorpg-game-c3469",
+  storageBucket: "mmorpg-game-c3469.firebasestorage.app",
+  messagingSenderId: "1040952297153",
+  appId: "1:1040952297153:web:05218ca608b30c9a627640",
+  measurementId: "G-BVPYX1SKNF"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);

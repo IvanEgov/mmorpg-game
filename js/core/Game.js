@@ -3,23 +3,23 @@ class Game {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
 
-        // === НОВОЕ: Загружаем сохранение или создаём нового игрока ===
         const savedData = localStorage.getItem('dungeonChronicles_save');
         if (savedData) {
-            console.log('📂 Загрузка сохранения...');
             const data = JSON.parse(savedData);
             this.player = new Player(data.player.x, data.player.y);
             this.player.loadFromJSON(data.player);
             this.currentLocationId = data.currentLocationId || 'city';
         } else {
-            console.log('🆕 Новая игра');
             this.player = new Player(15 * CONSTANTS.TILE_SIZE, 10 * CONSTANTS.TILE_SIZE);
             this.currentLocationId = 'city';
         }
 
         this.playerRenderer = new PlayerRenderer();
         this.enemyRenderer = new EnemyRenderer();
+        this.otherPlayerRenderer = new OtherPlayerRenderer(); // НОВОЕ
         this.ui = new UIManager(this.player);
+        this.network = new NetworkManager(this); // НОВОЕ
+
         this.keys = {};
         this.joystickActive = false;
         this.joystickX = 0;
@@ -27,17 +27,40 @@ class Game {
         this.lastTime = 0;
         this.damageNumbers = [];
 
-        this.locations = {
-            'city': new CityLocation()
-        };
+        this.locations = { 'city': new CityLocation() };
         this.currentLocation = this.locations[this.currentLocationId] || this.locations['city'];
+
+        // НОВОЕ: Объект других игроков
+        this.otherPlayers = {};
 
         window.gameInstance = this;
         this.setupInput();
         this.setupJoystick();
         this.ui.updateHUD();
+    }
 
-        console.log('✅ Игра загружена! Локация:', this.currentLocation.name);
+    // НОВОЕ: Обновление других игроков из сети
+    syncOtherPlayers() {
+        if (!this.network.connected) return;
+
+        // Удаляем игроков, которых больше нет в сети
+        for (const id in this.otherPlayers) {
+            if (!this.network.otherPlayers[id] ||
+                this.network.otherPlayers[id].locationId !== this.currentLocationId) {
+                delete this.otherPlayers[id];
+            }
+        }
+
+        // Добавляем/обновляем игроков в текущей локации
+        for (const [id, data] of Object.entries(this.network.otherPlayers)) {
+            if (data.locationId !== this.currentLocationId) continue;
+
+            if (this.otherPlayers[id]) {
+                this.otherPlayers[id].updateFromNetwork(data);
+            } else {
+                this.otherPlayers[id] = new OtherPlayer(id, data);
+            }
+        }
     }
 
     // === НОВОЕ: Сохранение игры ===
@@ -271,14 +294,21 @@ class Game {
         window.addEventListener('mouseup', end);
     }
 
-        update() {
+    update() {
         if (this.ui.activePanel) return;
         this.player.update();
 
-        // Обновляем текущую локацию
+        // НОВОЕ: Отправляем свою позицию в сеть
+        this.network.updatePosition(this.player);
+
+        // НОВОЕ: Синхронизируем других игроков
+        this.syncOtherPlayers();
+        for (const other of Object.values(this.otherPlayers)) {
+            other.update();
+        }
+
         this.currentLocation.update(this.player);
 
-        // Обновляем врагов и ловим их атаки
         for (const entity of this.currentLocation.entities) {
             if (entity instanceof Enemy) {
                 const attackResult = entity.update(this.player, this.currentLocation);
@@ -295,14 +325,12 @@ class Game {
         if (this.keys['d'] || this.keys['в']) dx += 1;
         if (this.joystickActive) { dx = this.joystickX; dy = this.joystickY; }
 
-        // === ИСПРАВЛЕНО: Используем player.move() для корректного обновления direction ===
         if (dx !== 0 || dy !== 0) {
             this.player.move(dx, dy, this.currentLocation.map);
         } else {
             this.player.isMoving = false;
         }
 
-        // Обновление всплывающих чисел
         for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
             this.damageNumbers[i].timer++;
             this.damageNumbers[i].y -= 1.2;
@@ -312,6 +340,27 @@ class Game {
         }
 
         this.ui.updateHUD();
+    }
+
+    render() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.currentLocation.render(this.ctx);
+
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Enemy) {
+                this.enemyRenderer.render(this.ctx, entity);
+            }
+        }
+
+        // НОВОЕ: Рендер других игроков
+        for (const other of Object.values(this.otherPlayers)) {
+            this.otherPlayerRenderer.render(this.ctx, other);
+        }
+
+        this.playerRenderer.render(this.ctx, this.player);
+        this.renderDamageNumbers();
     }
 
     render() {

@@ -3,24 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dungeon Chronicles</title>
+    <title>Dungeon Chronicles — Online</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="game" width="960" height="640"></canvas>
+    <!-- Экран ввода имени -->
+    <div id="login-screen">
+        <h1>⚔️ Dungeon Chronicles</h1>
+        <p>Введи своё имя героя:</p>
+        <input type="text" id="player-name-input" maxlength="15" placeholder="Иван" autocomplete="off">
+        <button id="login-btn">Войти в мир</button>
+        <p class="hint">Другие игроки увидят это имя в игре</p>
+    </div>
 
-    <div id="hud">
+    <canvas id="game" width="960" height="640" class="hidden"></canvas>
+
+    <div id="hud" class="hidden">
         <div class="stat">❤️ <span id="hp">100</span>/<span id="hpMax">100</span></div>
         <div class="stat">⭐ Ур. <span id="lvl">1</span></div>
         <div class="stat">💰 <span id="gold">50</span></div>
-        <div class="stat">📍 <span id="location-name">🏰 Стартовый город</span></div>
+        <div class="stat">📍 <span id="location-name">🏰 Город</span></div>
+        <div class="stat online-indicator">🌐 Онлайн: <span id="online-count">1</span></div>
         <div class="xp-bar-container">
             <div id="xp-bar-fill" style="width: 0%;"></div>
             <span id="xp-text">0 / 100 XP</span>
         </div>
     </div>
 
-    <div id="menu-buttons">
+    <div id="menu-buttons" class="hidden">
         <button id="btn-inv">🎒</button>
         <button id="btn-stats">📊</button>
         <button id="btn-skills">🌳</button>
@@ -35,7 +45,7 @@
         </div>
     </div>
 
-    <!-- Панели -->
+    <!-- Все панели (инвентарь, характеристики, навыки, NPC, магазин и т.д.) остаются без изменений -->
     <div id="panel-inventory" class="game-panel hidden">
         <h2>🎒 Инвентарь</h2>
         <div id="inventory-list" class="list-container"></div>
@@ -50,10 +60,8 @@
             <div class="stat-row"><span>🧠 Интеллект</span><span id="stat-int">0</span><button data-stat="int">+</button></div>
             <div class="stat-row"><span>❤️ Живучесть</span><span id="stat-vit">0</span><button data-stat="vit">+</button></div>
         </div>
-
         <h3>🛡️ Экипировка</h3>
         <div id="equipment-slots" class="equipment-container"></div>
-
         <h3>Итоговые показатели</h3>
         <div class="derived-stats">
             <div>❤️ HP: <span id="derived-hp">0</span></div>
@@ -71,7 +79,6 @@
         <button class="btn-close" id="close-skills">Закрыть</button>
     </div>
 
-    <!-- НОВЫЕ ПАНЕЛИ -->
     <div id="panel-npc" class="game-panel hidden">
         <h2 id="npc-name">NPC</h2>
         <div id="npc-options"></div>
@@ -102,6 +109,11 @@
         <button class="btn-close" id="close-deposit">Назад</button>
     </div>
 
+    <!-- Firebase SDK (подключаем с CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+    <!-- НАЧАЛО ИГРЫ -->
     <script src="js/data/constants.js"></script>
     <script src="js/locations/Location.js"></script>
     <script src="js/locations/CityLocation.js"></script>
@@ -112,6 +124,9 @@
     <script src="js/entities/EnemyRenderer.js"></script>
     <script src="js/entities/NPC.js"></script>
     <script src="js/entities/Portal.js"></script>
+    <script src="js/entities/OtherPlayer.js"></script>
+    <script src="js/entities/OtherPlayerRenderer.js"></script>
+    <script src="js/network/NetworkManager.js"></script>
     <script src="js/core/UIManager.js"></script>
     <script src="js/core/Game.js"></script>
     <script src="js/main.js"></script>
