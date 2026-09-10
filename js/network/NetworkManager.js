@@ -1,7 +1,18 @@
 ﻿class NetworkManager {
     constructor(game) {
         this.game = game;
-        this.playerId = 'player_' + Math.random().toString(36).substr(2, 9);
+
+        // 🆕 1. ПОСТОЯННЫЙ ID: Проверяем, есть ли уже сохранённый ID
+        let savedId = localStorage.getItem('mmorpg_player_id');
+        if (savedId) {
+            this.playerId = savedId;
+            console.log('🆔 Используется сохранённый ID игрока:', this.playerId);
+        } else {
+            this.playerId = 'player_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('mmorpg_player_id', this.playerId);
+            console.log('🆔 Создан и сохранён новый ID игрока:', this.playerId);
+        }
+
         this.playerName = 'Герой';
         this.otherPlayers = {};
         this.connected = false;
@@ -9,11 +20,11 @@
         this.UPDATE_INTERVAL = 100;
 
         this.initFirebase();
+        this.setupMobileCleanup(); // 🆕 2. Надёжное отключение для мобильных
     }
 
     initFirebase() {
         try {
-            // ✅ ТВОЙ КОНФИГ FIREBASE (адаптирован для compat режима)
             const firebaseConfig = {
                 apiKey: "AIzaSyCbD8mBeil89NsnP2BUBeJpNXztU-jCyl8",
                 authDomain: "mmorpg-game-c3469.firebaseapp.com",
@@ -25,13 +36,11 @@
                 measurementId: "G-BVPYX1SKNF"
             };
 
-            // Инициализация Firebase
             firebase.initializeApp(firebaseConfig);
             this.db = firebase.database();
             this.connected = true;
             console.log('✅ Firebase подключён! Онлайн-режим активен.');
 
-            // Слушаем изменения в списке игроков в реальном времени
             this.db.ref('players').on('value', (snapshot) => {
                 const data = snapshot.val();
                 this.otherPlayers = {};
@@ -39,23 +48,16 @@
                 if (data) {
                     const now = Date.now();
                     for (const [id, playerData] of Object.entries(data)) {
-                        if (id === this.playerId) continue; // Пропускаем себя
+                        if (id === this.playerId) continue;
 
-                        // Удаляем игроков, которые не обновляли статус более 10 секунд
-                        if (now - playerData.lastSeen > 10000) continue;
+                        // Удаляем "призраков", которые не обновлялись 15 секунд
+                        if (now - playerData.lastSeen > 15000) continue;
 
                         this.otherPlayers[id] = playerData;
                     }
                 }
 
-                // 🆕 ДИАГНОСТИКА: смотрим, кого мы получили из сети
-                console.log('📡 Данные из сети:', this.otherPlayers);
                 this.updateOnlineCount();
-            });
-
-            // При закрытии вкладки или обновлении страницы — удаляем себя из списка
-            window.addEventListener('beforeunload', () => {
-                this.disconnect();
             });
 
         } catch (error) {
@@ -64,16 +66,38 @@
         }
     }
 
+    // 🆕 Надёжная очистка при закрытии/сворачивании (работает на мобильных!)
+    setupMobileCleanup() {
+        const cleanup = () => {
+            if (this.connected) {
+                console.log('👋 Игрок выходит из сети, удаляем из базы...');
+                this.db.ref('players/' + this.playerId).remove();
+            }
+        };
+
+        // Стандартное закрытие вкладки (ПК)
+        window.addEventListener('beforeunload', cleanup);
+
+        // 📱 Надёжное закрытие/сворачивание на мобильных (iOS Safari, Chrome Android)
+        window.addEventListener('pagehide', cleanup);
+
+        // Если игрок свернул браузер, помечаем его как неактивного
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.connected) {
+                // Можно временно удалить или просто дать сработать таймауту 15 сек
+                // Оставим таймаут, чтобы при быстром разворачивании не было мерцания
+            }
+        });
+    }
+
     setPlayerName(name) {
         this.playerName = name || 'Герой';
     }
 
-    // Отправка своей позиции и статуса в Firebase
     updatePosition(player) {
         if (!this.connected) return;
 
         const now = Date.now();
-        // Ограничиваем частоту обновлений, чтобы не тратить лимиты Firebase
         if (now - this.lastUpdate < this.UPDATE_INTERVAL) return;
         this.lastUpdate = now;
 
@@ -89,17 +113,18 @@
             lastSeen: now
         };
 
-        this.db.ref('players/' + this.playerId).set(data);
+        // Используем update вместо set для лучшей производительности
+        this.db.ref('players/' + this.playerId).update(data);
     }
 
-    // Очистка при выходе
     disconnect() {
         if (!this.connected) return;
         this.db.ref('players/' + this.playerId).remove();
+        this.connected = false;
     }
 
     updateOnlineCount() {
-        const count = Object.keys(this.otherPlayers).length + 1; // +1 за себя
+        const count = Object.keys(this.otherPlayers).length + 1;
         const el = document.getElementById('online-count');
         if (el) el.textContent = count;
     }
