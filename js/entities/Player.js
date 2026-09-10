@@ -149,12 +149,17 @@ class Player {
     }
 
     move(dx, dy, map) {
-        if (dx > 0) this.direction = 'right';
-        if (dx < 0) this.direction = 'left';
-        if (dy > 0) this.direction = 'down';
-        if (dy < 0) this.direction = 'up';
+        // 🆕 ИСПРАВЛЕНО: Определяем направление по большей оси
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Горизонтальное движение преобладает
+            if (dx > 0) this.direction = 'right';
+            else if (dx < 0) this.direction = 'left';
+        } else {
+            // Вертикальное движение преобладает
+            if (dy > 0) this.direction = 'down';
+            else if (dy < 0) this.direction = 'up';
+        }
 
-        // === ИСПРАВЛЕНО: Правильная формула скорости ===
         const newX = this.x + dx * this.speed;
         const newY = this.y + dy * this.speed;
         const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
