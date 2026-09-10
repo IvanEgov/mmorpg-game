@@ -1,55 +1,60 @@
-class OtherPlayerRenderer {
+п»їclass OtherPlayerRenderer {
     render(ctx, otherPlayer) {
+        console.log('рџџў OtherPlayerRenderer.render РІС‹Р·РІР°РЅ РґР»СЏ:', otherPlayer.name, 'X:', otherPlayer.x, 'Y:', otherPlayer.y);
+
         const ts = CONSTANTS.TILE_SIZE;
         const centerX = otherPlayer.x + ts / 2;
         const centerY = otherPlayer.y + ts / 2;
 
-        // Тень
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        // 1. РўРµРЅСЊ (С‡С‘СЂРЅР°СЏ)
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.beginPath();
         ctx.ellipse(centerX, otherPlayer.y + ts - 4, ts / 3, ts / 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Тело (зелёное, чтобы отличать от своего синего)
-        ctx.fillStyle = '#2ecc71';
-        ctx.strokeStyle = '#27ae60';
-        ctx.lineWidth = 2;
+        // 2. РўРµР»Рѕ (РЇР РљРћ-Р—Р•Р›РЃРќР«Р™, С‡С‚РѕР±С‹ С‚РѕС‡РЅРѕ Р±С‹Р»Рѕ РІРёРґРЅРѕ!)
+        ctx.fillStyle = '#00ff00';
+        ctx.strokeStyle = '#008800';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, ts / 2 - 4, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, ts / 2 - 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Глаза по направлению
+        // 3. Р“Р»Р°Р·Р° (С‡С‚РѕР±С‹ РІРёРґРµС‚СЊ РЅР°РїСЂР°РІР»РµРЅРёРµ)
         ctx.fillStyle = '#fff';
         let eyeOffsetX = 0, eyeOffsetY = 0;
-        if (otherPlayer.direction === 'left') eyeOffsetX = -5;
-        if (otherPlayer.direction === 'right') eyeOffsetX = 5;
-        if (otherPlayer.direction === 'up') eyeOffsetY = -5;
-        if (otherPlayer.direction === 'down') eyeOffsetY = 5;
+        if (otherPlayer.direction === 'left') eyeOffsetX = -6;
+        if (otherPlayer.direction === 'right') eyeOffsetX = 6;
+        if (otherPlayer.direction === 'up') eyeOffsetY = -6;
+        if (otherPlayer.direction === 'down') eyeOffsetY = 6;
+
         ctx.beginPath();
-        ctx.arc(centerX + eyeOffsetX, centerY + eyeOffsetY, 3, 0, Math.PI * 2);
+        ctx.arc(centerX + eyeOffsetX - 3, centerY + eyeOffsetY, 3, 0, Math.PI * 2);
+        ctx.arc(centerX + eyeOffsetX + 3, centerY + eyeOffsetY, 3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Имя и уровень над головой
-        ctx.font = 'bold 12px sans-serif';
+        // 4. РРјСЏ Рё СѓСЂРѕРІРµРЅСЊ (РЇР РљРћ-Р–РЃР›РўРђРЇ РїР»Р°С€РєР°)
+        ctx.font = 'bold 14px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Фон для имени
         const nameText = `${otherPlayer.name} [${otherPlayer.level}]`;
         const textWidth = ctx.measureText(nameText).width;
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(centerX - textWidth / 2 - 4, otherPlayer.y - 22, textWidth + 8, 16);
 
-        // Имя
-        ctx.fillStyle = '#fff';
-        ctx.fillText(nameText, centerX, otherPlayer.y - 14);
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.9)'; // Р–С‘Р»С‚С‹Р№ С„РѕРЅ
+        ctx.fillRect(centerX - textWidth / 2 - 4, otherPlayer.y - 24, textWidth + 8, 18);
 
-        // HP бар
-        const hpPercent = otherPlayer.hp / otherPlayer.maxHp;
+        ctx.fillStyle = '#000'; // Р§С‘СЂРЅС‹Р№ С‚РµРєСЃС‚
+        ctx.fillText(nameText, centerX, otherPlayer.y - 15);
+
+        // 5. HP Р±Р°СЂ (РЇР РљРћ-РљР РђРЎРќР«Р™)
+        const hpPercent = Math.max(0, otherPlayer.hp / otherPlayer.maxHp);
         ctx.fillStyle = '#500';
-        ctx.fillRect(otherPlayer.x, otherPlayer.y - 8, ts, 4);
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(otherPlayer.x, otherPlayer.y - 8, ts * hpPercent, 4);
+        ctx.fillRect(otherPlayer.x, otherPlayer.y - 8, ts, 5);
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(otherPlayer.x, otherPlayer.y - 8, ts * hpPercent, 5);
+
+        console.log('вњ… РћС‚СЂРёСЃРѕРІРєР° РґСЂСѓРіРѕРіРѕ РёРіСЂРѕРєР° Р·Р°РІРµСЂС€РµРЅР°');
     }
 }

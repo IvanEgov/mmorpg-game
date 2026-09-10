@@ -377,17 +377,29 @@ class Game {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Рендер текущей локации
+        // 1. Рендер карты
         this.currentLocation.render(this.ctx);
 
-        // Рендер врагов (отдельно, чтобы они были поверх)
+        // 2. Рендер врагов
         for (const entity of this.currentLocation.entities) {
             if (entity instanceof Enemy) {
                 this.enemyRenderer.render(this.ctx, entity);
             }
         }
 
+        // 3. Рендер ДРУГИХ игроков
+        const others = Object.values(this.otherPlayers);
+        if (others.length > 0) {
+            console.log(`🎨 Начинаю отрисовку ${others.length} других игроков...`);
+        }
+        for (const other of others) {
+            this.otherPlayerRenderer.render(this.ctx, other);
+        }
+
+        // 4. Рендер ТВОЕГО персонажа
         this.playerRenderer.render(this.ctx, this.player);
+
+        // 5. Всплывающие числа
         this.renderDamageNumbers();
     }
 
