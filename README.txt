@@ -13,3 +13,5 @@ morpg-game/
     |   └── Enemy.js  		# Логика и характеристики врага
     └── data/
         └── constants.js        # Глобальные константы (размеры, цвета)
+
+Использовал https://console.firebase.google.com/
