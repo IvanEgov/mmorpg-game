@@ -3,6 +3,10 @@ class Enemy {
         this.x = x;
         this.y = y;
         this.type = enemyType;
+
+        // 🆕 Уникальный ID для синхронизации между игроками
+        this.uniqueId = 'enemy_' + Math.floor(x) + '_' + Math.floor(y) + '_' + enemyType;
+
         const data = CONSTANTS.ENEMIES[enemyType];
         this.name = data.name;
         this.icon = data.icon;
@@ -107,6 +111,9 @@ class Enemy {
 class ArenaBat extends Enemy {
     constructor(x, y, powerMultiplier, wave) {
         super(x, y, 'bat');
+        // 🆕 Уникальный ID с учётом волны
+        this.uniqueId = 'arenabat_' + Math.floor(x) + '_' + Math.floor(y) + '_w' + wave;
+
         this.hp = Math.floor(CONSTANTS.ARENA.BAT_BASE_HP * powerMultiplier);
         this.maxHp = this.hp;
         this.atk = Math.floor(CONSTANTS.ARENA.BAT_BASE_ATK * powerMultiplier);

@@ -70,13 +70,18 @@
         const enemyType = this.dungeonId === 'dungeon_1' ? 'slime' : 'bat';
         const count = this.dungeonId === 'dungeon_1' ? 5 : 4;
 
+        // 🆕 Используем seeded random на основе ID данжа
+        const rng = new SeededRandom(this.dungeonId + '_enemies');
+        const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
+        const mapH = this.mapHeight || CONSTANTS.MAP_HEIGHT;
+
         for (let i = 0; i < count; i++) {
             let x, y, attempts = 0;
-            const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
-            const mapH = this.mapHeight || CONSTANTS.MAP_HEIGHT;
             do {
-                x = (3 + Math.random() * (mapW - 6)) * CONSTANTS.TILE_SIZE;
-                y = (3 + Math.random() * (mapH - 6)) * CONSTANTS.TILE_SIZE;
+                const tileX = rng.nextInt(3, mapW - 4);
+                const tileY = rng.nextInt(3, mapH - 4);
+                x = tileX * CONSTANTS.TILE_SIZE;
+                y = tileY * CONSTANTS.TILE_SIZE;
                 attempts++;
             } while (!this.isWalkable(x, y) && attempts < 50);
 

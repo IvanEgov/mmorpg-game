@@ -82,12 +82,15 @@ class Game {
     changeLocation(locationId) {
         console.log(`🌀 Переход в: ${locationId}`);
 
-        // Останавливаем волны если уходим с арены
         if (this.currentLocationId === 'arena_survival' && locationId !== 'arena_survival') {
             this.waveManager.stop();
         }
 
-        // Данжи и арена пересоздаются при каждом входе
+        // 🆕 Очищаем старые данные убийств при выходе из локации
+        if (this.currentLocationId && this.currentLocationId !== locationId) {
+            this.network.cleanupKilledEnemies(this.currentLocationId);
+        }
+
         if (locationId.startsWith('dungeon_') || locationId === 'arena_survival') {
             this.locations[locationId] = new DungeonLocation(locationId);
         } else if (locationId === 'city' && !this.locations['city']) {
@@ -97,7 +100,6 @@ class Game {
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId];
 
-        // Позиция игрока
         if (locationId === 'city') {
             this.player.x = 15 * CONSTANTS.TILE_SIZE;
             this.player.y = 10 * CONSTANTS.TILE_SIZE;
@@ -106,18 +108,39 @@ class Game {
             this.player.y = this.currentLocation.spawnY || 3 * CONSTANTS.TILE_SIZE;
         }
 
-        // Сбрасываем камеру на позицию игрока
         this.camera.x = this.player.x - this.canvas.width / 2;
         this.camera.y = this.player.y - this.canvas.height / 2;
 
         document.getElementById('location-name').textContent = this.currentLocation.name;
 
-        // Если вошли на арену — запускаем волны
+        // 🆕 Загружаем список убитых мобов из Firebase
+        if (locationId !== 'city') {
+            this.network.getKilledEnemies(locationId, (killedIds) => {
+                this.removeKilledEnemies(killedIds);
+            });
+        }
+
         if (locationId === 'arena_survival') {
             this.startArena();
         }
 
         this.saveGame();
+    }
+
+    // 🆕 Удалить убитых мобов из текущей локации
+    removeKilledEnemies(killedIds) {
+        if (!killedIds || killedIds.length === 0) return;
+
+        this.currentLocation.entities = this.currentLocation.entities.filter(entity => {
+            if (entity instanceof Enemy) {
+                if (killedIds.includes(entity.uniqueId)) {
+                    return false; // Убираем убитого моба
+                }
+            }
+            return true;
+        });
+
+        console.log(`🗑️ Удалено ${killedIds.length} убитых мобов из локации`);
     }
 
     // ============ АРЕНА ВЫЖИВАНИЯ ============
@@ -282,12 +305,15 @@ class Game {
         const result = this.player.attack(enemies);
         if (result) {
             this.addDamageNumber(result.enemy.x, result.enemy.y - 10, result.damage, '#ffe066');
-
             if (result.killed) {
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
 
+                // 🆕 Синхронизируем убийство с другими игроками
+                this.network.reportEnemyKilled(result.enemy.uniqueId, this.currentLocationId);
+
                 const loot = result.enemy.getLoot();
+            // ... остальной код без изменений ...
                 loot.forEach(itemId => {
                     this.player.addItem(itemId);
                     // Обновляем прогресс квестов

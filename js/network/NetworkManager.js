@@ -23,7 +23,35 @@
         this.initFirebase();
         this.setupMobileCleanup(); // 🆕 2. Надёжное отключение для мобильных
     }
+    // 🆕 Сообщить всем, что моб убит
+    reportEnemyKilled(enemyId, locationId) {
+        if (!this.connected) return;
+        const key = locationId + '/' + enemyId;
+        this.db.ref('killed_enemies/' + key).set({
+            killedBy: this.playerName,
+            timestamp: Date.now()
+        });
+        console.log(`💀 Моб ${enemyId} убит, синхронизируем...`);
+    }
 
+    // 🆕 Получить список убитых мобов для локации
+    getKilledEnemies(locationId, callback) {
+        if (!this.connected) {
+            callback([]);
+            return;
+        }
+        this.db.ref('killed_enemies/' + locationId).once('value', (snapshot) => {
+            const data = snapshot.val();
+            const killedIds = data ? Object.keys(data) : [];
+            callback(killedIds);
+        });
+    }
+
+    // 🆕 Очистить убитых мобов при выходе из локации
+    cleanupKilledEnemies(locationId) {
+        if (!this.connected) return;
+        this.db.ref('killed_enemies/' + locationId).remove();
+    }
     initFirebase() {
         try {
             const firebaseConfig = {
