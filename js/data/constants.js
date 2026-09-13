@@ -1,4 +1,5 @@
 const CONSTANTS = {
+    console.log('✅ Файл constants.js успешно загружен!');
     TILE_SIZE: 32,
     CANVAS_WIDTH: 960,
     CANVAS_HEIGHT: 640,

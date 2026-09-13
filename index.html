@@ -4,19 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dungeon Chronicles — Online</title>
-    <!-- Эта строка говорит браузеру: "Иконки нет, не ищи favicon.ico" -->
+    <!-- Отключаем поиск favicon.ico, чтобы не было ошибки 404 -->
     <link rel="icon" href="data:;base64,=">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <!-- Экран ввода имени -->
+    <!-- Экран входа -->
     <div id="login-screen">
         <h1>⚔️ Dungeon Chronicles</h1>
         <p>Введи своё имя героя:</p>
         <input type="text" id="player-name-input" maxlength="15" placeholder="Иван" autocomplete="off">
         <button id="login-btn">Войти в мир</button>
         <p class="hint">Другие игроки увидят это имя в игре</p>
+    </div>
+
+    <!-- Экран смерти -->
+    <div id="death-screen" class="hidden">
+        <div class="death-content">
+            <h1>💀 Вы погибли</h1>
+            <p class="death-stats">
+                Достигнута волна: <span id="death-wave">0</span><br>
+                Ваш уровень: <span id="death-level">1</span><br>
+                <span style="color: #e94560; font-size: 14px;">Штраф: -20% золота</span>
+            </p>
+            <button id="respawn-btn">✨ Возродиться в городе</button>
+        </div>
     </div>
 
     <canvas id="game" width="960" height="640" class="hidden"></canvas>
@@ -48,7 +60,7 @@
         </div>
     </div>
 
-    <!-- Все панели (инвентарь, характеристики, навыки, NPC, магазин и т.д.) остаются без изменений -->
+    <!-- Панели (Инвентарь, Статы, Навыки, NPC, Магазин, Квесты, Хранилище) -->
     <div id="panel-inventory" class="game-panel hidden">
         <h2>🎒 Инвентарь</h2>
         <div id="inventory-list" class="list-container"></div>
@@ -112,19 +124,22 @@
         <button class="btn-close" id="close-deposit">Назад</button>
     </div>
 
-    <!-- Firebase SDK (обязательно до наших скриптов) -->
+    <!-- ========================================== -->
+    <!-- СКРИПТЫ (СТРОГО В ЭТОМ ПОРЯДКЕ!)         -->
+    <!-- ========================================== -->
+    <!-- 1. Firebase (обязательно первым) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 
-    <!-- 1. СНОВА КОНСТАНТЫ (Они нужны всем остальным файлам!) -->
+    <!-- 2. КОНСТАНТЫ (должны быть загружены ДО всех остальных файлов!) -->
     <script src="js/data/constants.js"></script>
 
-    <!-- 2. Локации (используют CONSTANTS) -->
+    <!-- 3. Локации -->
     <script src="js/locations/Location.js"></script>
     <script src="js/locations/CityLocation.js"></script>
     <script src="js/locations/DungeonLocation.js"></script>
 
-    <!-- 3. Сущности (используют CONSTANTS и Location) -->
+    <!-- 4. Сущности -->
     <script src="js/entities/Player.js"></script>
     <script src="js/entities/PlayerRenderer.js"></script>
     <script src="js/entities/Enemy.js"></script>
@@ -134,18 +149,16 @@
     <script src="js/entities/OtherPlayer.js"></script>
     <script src="js/entities/OtherPlayerRenderer.js"></script>
 
-    <!-- 4. Системы и Сеть -->
+    <!-- 5. Системы и Сеть -->
     <script src="js/core/Camera.js"></script>
     <script src="js/systems/WaveManager.js"></script>
     <script src="js/network/NetworkManager.js"></script>
     <script src="js/core/UIManager.js"></script>
 
-    <!-- 5. Главный класс игры (собирает всё вместе) -->
+    <!-- 6. Ядро игры -->
     <script src="js/core/Game.js"></script>
 
-    <!-- 6. ТОЧКА ВХОДА (запускает всё после загрузки DOM) -->
+    <!-- 7. Точка входа -->
     <script src="js/main.js"></script>
-
-
 </body>
 </html>
