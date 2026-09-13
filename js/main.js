@@ -4,6 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
     const loginBtn = document.getElementById('login-btn');
     const nameInput = document.getElementById('player-name-input');
+    // Обработчик возрождения
+    const respawnBtn = document.getElementById('respawn-btn');
+    if (respawnBtn) {
+        respawnBtn.addEventListener('click', () => {
+            if (window.gameInstance) window.gameInstance.respawn();
+        });
+    }
 
     // Проверяем, есть ли сохранённое имя
     const savedName = localStorage.getItem('player_name');

@@ -60,12 +60,13 @@
             'dungeon_1',
             '🕳️ Подземелье (Слаймы)'
         ));
-        // Портал в подземелье 2 (летучие мыши)
+
+        // 🆕 Портал на арену выживания
         this.entities.push(new Portal(
             2 * CONSTANTS.TILE_SIZE,
             Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,
-            'dungeon_2',
-            '🕳️ Пещера (Летучие мыши)'
+            'arena_survival',
+            '💀 Арена выживания'
         ));
     }
 }

@@ -107,3 +107,16 @@ const CONSTANTS = {
         }
     }
 };
+    // Режим арены выживания
+    ARENA: {
+        MAP_WIDTH: 60,   // Большая карта (в 2 раза больше обычной)
+        MAP_HEIGHT: 40,
+        WAVE_INTERVAL: 15000,    // Новая волна каждые 15 секунд
+        INITIAL_MOBS: 3,         // Мобов в первой волне
+        MOBS_PER_WAVE: 2,        // +2 моба с каждой волной
+        LEVEL_SCALE_INTERVAL: 3, // Каждые 3 уровня героя
+        LEVEL_SCALE_POWER: 1.5,  // Множитель силы мобов
+        BAT_BASE_HP: 20,
+        BAT_BASE_ATK: 8,
+        BAT_BASE_SPEED: 2.0
+    }

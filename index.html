@@ -6,6 +6,7 @@
     <title>Dungeon Chronicles — Online</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Экран ввода имени -->
     <div id="login-screen">
@@ -128,7 +129,21 @@
     <script src="js/entities/OtherPlayerRenderer.js"></script>
     <script src="js/network/NetworkManager.js"></script>
     <script src="js/core/UIManager.js"></script>
+    <script src="js/core/Camera.js"></script>
+    <script src="js/systems/WaveManager.js"></script>
     <script src="js/core/Game.js"></script>
     <script src="js/main.js"></script>
+    <!-- Экран смерти -->
+    <div id="death-screen" class="hidden">
+        <div class="death-content">
+            <h1>💀 Вы погибли</h1>
+            <p class="death-stats">
+                Достигнута волна: <span id="death-wave">0</span><br>
+                Ваш уровень: <span id="death-level">1</span><br>
+                <span style="color: #e94560; font-size: 14px;">Штраф: -20% золота</span>
+            </p>
+            <button id="respawn-btn">✨ Возродиться в городе</button>
+        </div>
+    </div>
 </body>
 </html>

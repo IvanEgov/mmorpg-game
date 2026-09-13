@@ -1,4 +1,5 @@
 class Game {
+   
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
@@ -16,9 +17,15 @@ class Game {
 
         this.playerRenderer = new PlayerRenderer();
         this.enemyRenderer = new EnemyRenderer();
-        this.otherPlayerRenderer = new OtherPlayerRenderer(); // НОВОЕ
+        this.otherPlayerRenderer = new OtherPlayerRenderer();
         this.ui = new UIManager(this.player);
-        this.network = new NetworkManager(this); // НОВОЕ
+        this.network = new NetworkManager(this);
+
+        // 🆕 КАМЕРА
+        this.camera = new Camera(this.canvas.width, this.canvas.height);
+
+        // 🆕 ВОЛНОВЫЙ МЕНЕДЖЕР
+        this.waveManager = new WaveManager(null);
 
         this.keys = {};
         this.joystickActive = false;
@@ -29,14 +36,221 @@ class Game {
 
         this.locations = { 'city': new CityLocation() };
         this.currentLocation = this.locations[this.currentLocationId] || this.locations['city'];
-
-        // НОВОЕ: Объект других игроков
         this.otherPlayers = {};
 
         window.gameInstance = this;
         this.setupInput();
         this.setupJoystick();
         this.ui.updateHUD();
+
+        // Если вошли сразу на арену — запускаем волны
+        if (this.currentLocationId === 'arena_survival') {
+            this.startArena();
+        }
+    }
+
+    // 🆕 Запуск арены выживания
+    startArena() {
+        console.log('💀 Арена выживания запущена!');
+        this.waveManager = new WaveManager(this.currentLocation);
+        this.waveManager.start(this.player.level);
+    }
+
+    // 🆕 Смерть игрока
+    handlePlayerDeath() {
+        console.log('💀 Игрок погиб!');
+        this.waveManager.stop();
+
+        // Показываем экран смерти
+        document.getElementById('death-screen').classList.remove('hidden');
+        document.getElementById('death-wave').textContent = this.waveManager.wave;
+        document.getElementById('death-level').textContent = this.player.level;
+
+        // Пауза игры
+        this.isPaused = true;
+    }
+
+    // 🆕 Возрождение в городе
+    respawn() {
+        console.log('✨ Возрождение в городе');
+        document.getElementById('death-screen').classList.add('hidden');
+
+        // Восстанавливаем HP/MP
+        this.player.hp = this.player.maxHp;
+        this.player.mp = this.player.maxMp;
+
+        // Теряем 20% золота (штраф за смерть)
+        const goldLoss = Math.floor(this.player.gold * 0.2);
+        this.player.gold -= goldLoss;
+
+        // Телепортируем в город
+        this.changeLocation('city');
+        this.isPaused = false;
+        this.saveGame();
+    }
+
+    changeLocation(locationId) {
+        console.log(`🌀 Переход в: ${locationId}`);
+
+        // Останавливаем волны если уходим с арены
+        if (this.currentLocationId === 'arena_survival' && locationId !== 'arena_survival') {
+            this.waveManager.stop();
+        }
+
+        if (locationId.startsWith('dungeon_') || locationId === 'arena_survival') {
+            this.locations[locationId] = new DungeonLocation(locationId);
+        } else if (locationId === 'city' && !this.locations['city']) {
+            this.locations['city'] = new CityLocation();
+        }
+
+        this.currentLocationId = locationId;
+        this.currentLocation = this.locations[locationId];
+
+        if (locationId === 'city') {
+            this.player.x = 15 * CONSTANTS.TILE_SIZE;
+            this.player.y = 10 * CONSTANTS.TILE_SIZE;
+        } else {
+            this.player.x = this.currentLocation.spawnX || 3 * CONSTANTS.TILE_SIZE;
+            this.player.y = this.currentLocation.spawnY || 3 * CONSTANTS.TILE_SIZE;
+        }
+
+        document.getElementById('location-name').textContent = this.currentLocation.name;
+
+        // Если вошли на арену — запускаем волны
+        if (locationId === 'arena_survival') {
+            this.startArena();
+        }
+
+        this.saveGame();
+    }
+
+    update(deltaTime) {
+        if (this.ui.activePanel || this.isPaused) return;
+
+        this.player.update();
+        this.network.updatePosition(this.player);
+        this.syncOtherPlayers();
+        for (const other of Object.values(this.otherPlayers)) other.update();
+
+        // 🆕 Обновляем волны на арене
+        if (this.currentLocationId === 'arena_survival' && this.waveManager.active) {
+            this.waveManager.update(deltaTime, this.player);
+        }
+
+        this.currentLocation.update(this.player);
+
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Enemy) {
+                const attackResult = entity.update(this.player, this.currentLocation);
+                if (attackResult) {
+                    this.addDamageNumber(attackResult.targetX, attackResult.targetY - 10, attackResult.damage, '#ff4444');
+                }
+            }
+        }
+
+        let dx = 0, dy = 0;
+        if (this.keys['w'] || this.keys['ц']) dy -= 1;
+        if (this.keys['s'] || this.keys['ы']) dy += 1;
+        if (this.keys['a'] || this.keys['ф']) dx -= 1;
+        if (this.keys['d'] || this.keys['в']) dx += 1;
+        if (this.joystickActive) { dx = this.joystickX; dy = this.joystickY; }
+
+        if (dx !== 0 || dy !== 0) {
+            this.player.move(dx, dy, this.currentLocation.map);
+        } else {
+            this.player.isMoving = false;
+        }
+
+        // 🆕 КАМЕРА следует за игроком
+        this.camera.follow(this.player.x + CONSTANTS.TILE_SIZE / 2, this.player.y + CONSTANTS.TILE_SIZE / 2);
+        const mapW = (this.currentLocation.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
+        const mapH = (this.currentLocation.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
+        this.camera.clamp(mapW, mapH);
+
+        // Всплывающие числа
+        for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
+            this.damageNumbers[i].timer++;
+            this.damageNumbers[i].y -= 1.2;
+            if (this.damageNumbers[i].timer >= this.damageNumbers[i].maxTimer) {
+                this.damageNumbers.splice(i, 1);
+            }
+        }
+
+        // 🆕 Проверка смерти
+        if (this.player.hp <= 0 && !this.isPaused) {
+            this.handlePlayerDeath();
+        }
+
+        this.ui.updateHUD();
+    }
+
+    render() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 🆕 Применяем камеру
+        this.camera.apply(this.ctx);
+
+        this.currentLocation.render(this.ctx);
+
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Enemy) {
+                // Для ArenaBat используем его собственный render
+                if (entity instanceof ArenaBat) {
+                    entity.render(this.ctx);
+                } else {
+                    this.enemyRenderer.render(this.ctx, entity);
+                }
+            }
+        }
+
+        for (const other of Object.values(this.otherPlayers)) {
+            this.otherPlayerRenderer.render(this.ctx, other);
+        }
+
+        this.playerRenderer.render(this.ctx, this.player);
+        this.renderDamageNumbers();
+
+        // 🆕 Восстанавливаем контекст после камеры
+        this.camera.restore(this.ctx);
+
+        // 🆕 HUD волны арены (рисуем поверх камеры)
+        if (this.currentLocationId === 'arena_survival' && this.waveManager.active) {
+            this.renderArenaHUD();
+        }
+    }
+
+    // 🆕 Отрисовка HUD арены
+    renderArenaHUD() {
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Фон
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(10, 10, 280, 80);
+        ctx.strokeStyle = '#e94560';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, 10, 280, 80);
+
+        // Текст
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`💀 ВОЛНА: ${this.waveManager.wave}`, 20, 20);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText(`Множитель силы: x${Math.pow(CONSTANTS.ARENA.LEVEL_SCALE_POWER, Math.floor(this.player.level / CONSTANTS.ARENA.LEVEL_SCALE_INTERVAL)).toFixed(2)}`, 20, 45);
+
+        // Прогресс до следующей волны
+        const progress = this.waveManager.waveTimer / CONSTANTS.ARENA.WAVE_INTERVAL;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(20, 70, 260, 10);
+        ctx.fillStyle = '#e94560';
+        ctx.fillRect(20, 70, 260 * progress, 10);
+
+        ctx.restore();
     }
 
     // НОВОЕ: Обновление других игроков из сети
@@ -426,10 +640,12 @@ class Game {
         }
     }
 
-    loop() {
-        this.update();
+    loop(timestamp) {
+        const deltaTime = timestamp - this.lastTime;
+        this.lastTime = timestamp;
+        this.update(deltaTime);
         this.render();
-        requestAnimationFrame(() => this.loop());
+        requestAnimationFrame((t) => this.loop(t));
     }
 
     start() {

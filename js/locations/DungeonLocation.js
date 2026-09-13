@@ -1,23 +1,45 @@
 ﻿class DungeonLocation extends Location {
     constructor(dungeonId) {
-        super(dungeonId === 'dungeon_1' ? '⚔️ Подземелье' : '⚔️ Пещера');
+        const names = {
+            'dungeon_1': '⚔️ Подземелье',
+            'dungeon_2': '🦇 Арена летучих мышей',
+            'arena_survival': '💀 Арена выживания'
+        };
+        super(names[dungeonId] || '⚔️ Данж');
         this.dungeonId = dungeonId;
+        this.spawnX = 3 * CONSTANTS.TILE_SIZE;
+        this.spawnY = 3 * CONSTANTS.TILE_SIZE;
         this.generateMap();
-        this.spawnEnemies();
+        
+        // Для арены выживания мобы не спавнятся сразу — их добавит WaveManager
+        if (dungeonId !== 'arena_survival') {
+            this.spawnEnemies();
+        }
         this.spawnExitPortal();
     }
 
     generateMap() {
-        // Простой данж: комната с врагами
-        for (let y = 0; y < CONSTANTS.MAP_HEIGHT; y++) {
+        // Определяем размер карты
+        const isArena = this.dungeonId === 'arena_survival';
+        const mapW = isArena ? CONSTANTS.ARENA.MAP_WIDTH : CONSTANTS.MAP_WIDTH;
+        const mapH = isArena ? CONSTANTS.ARENA.MAP_HEIGHT : CONSTANTS.MAP_HEIGHT;
+
+        this.mapWidth = mapW;
+        this.mapHeight = mapH;
+
+        for (let y = 0; y < mapH; y++) {
             this.map[y] = [];
-            for (let x = 0; x < CONSTANTS.MAP_WIDTH; x++) {
+            for (let x = 0; x < mapW; x++) {
                 // Границы - стены
-                if (x === 0 || y === 0 || x === CONSTANTS.MAP_WIDTH - 1 || y === CONSTANTS.MAP_HEIGHT - 1) {
+                if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
                     this.map[y][x] = 7;
                 }
-                // Препятствия внутри
-                else if ((x === 8 || x === 22) && (y === 5 || y === 15)) {
+                // Арена: случайные препятствия-колонны
+                else if (isArena && Math.random() < 0.04 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
+                    this.map[y][x] = 7;
+                }
+                // Обычный данж: препятствия
+                else if (!isArena && ((x === 8 || x === 22) && (y === 5 || y === 15))) {
                     this.map[y][x] = 7;
                 }
                 // Пол
@@ -28,20 +50,31 @@
         }
     }
 
+    // Переопределяем isWalkable для больших карт
+    isWalkable(x, y) {
+        const tileX = Math.floor(x / CONSTANTS.TILE_SIZE);
+        const tileY = Math.floor(y / CONSTANTS.TILE_SIZE);
+        const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
+        const mapH = this.mapHeight || CONSTANTS.MAP_HEIGHT;
+        if (tileX < 0 || tileY < 0 || tileX >= mapW || tileY >= mapH) return false;
+        if (!this.map[tileY]) return false;
+        const tile = this.map[tileY][tileX];
+        return tile !== 1 && tile !== 3 && tile !== 4 && tile !== 5 && tile !== 7;
+    }
+
     spawnEnemies() {
         const enemyType = this.dungeonId === 'dungeon_1' ? 'slime' : 'bat';
         const count = this.dungeonId === 'dungeon_1' ? 5 : 4;
 
         for (let i = 0; i < count; i++) {
-            // === ИСПРАВЛЕНО: Спавним врагов только на проходимых тайлах ===
-            let x, y;
-            let attempts = 0;
+            let x, y, attempts = 0;
+            const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
+            const mapH = this.mapHeight || CONSTANTS.MAP_HEIGHT;
             do {
-                x = (3 + Math.random() * 24) * CONSTANTS.TILE_SIZE;
-                y = (3 + Math.random() * 14) * CONSTANTS.TILE_SIZE;
+                x = (3 + Math.random() * (mapW - 6)) * CONSTANTS.TILE_SIZE;
+                y = (3 + Math.random() * (mapH - 6)) * CONSTANTS.TILE_SIZE;
                 attempts++;
-                if (attempts > 50) break; // Защита от бесконечного цикла
-            } while (!this.isWalkable(x, y));
+            } while (!this.isWalkable(x, y) && attempts < 50);
 
             this.entities.push(new Enemy(x, y, enemyType));
         }
