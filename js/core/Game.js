@@ -53,7 +53,10 @@ class Game {
 
         console.log('✅ Игра загружена! Локация:', this.currentLocation.name);
     }
-
+    // Обёртка для UIManager
+    updateHUD() {
+        this.ui.updateHUD();
+    }
     // ============ СОХРАНЕНИЕ / ЗАГРУЗКА ============
     saveGame() {
         const data = {

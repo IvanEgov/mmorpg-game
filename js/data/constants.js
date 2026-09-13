@@ -10,6 +10,7 @@ const CONSTANTS = {
     ATTACK_RANGE: 60,
     ATTACK_COOLDOWN: 25,
     INTERACT_RANGE: 50,
+    EQUIPMENT_SLOTS: ['weapon', 'helmet', 'chest', 'legs', 'boots', 'ring'],
     COLORS: {
         GRASS: '#2d5a3d',
         WALL: '#555555',

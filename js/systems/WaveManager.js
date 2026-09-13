@@ -45,32 +45,40 @@ class WaveManager {
 
         for (let i = 0; i < mobCount; i++) {
             let x, y;
-            let attempts = 0;
             let validSpawn = false;
 
-            while (attempts < 100 && !validSpawn) {
+            // 🆕 Ищем проходимую точку
+            for (let attempt = 0; attempt < 200 && !validSpawn; attempt++) {
                 const tileX = 2 + Math.floor(Math.random() * (mapW - 4));
                 const tileY = 2 + Math.floor(Math.random() * (mapH - 4));
 
-                x = tileX * CONSTANTS.TILE_SIZE;
-                y = tileY * CONSTANTS.TILE_SIZE;
+                // Проверяем, что клетка проходима
+                if (this.location.map[tileY] &&
+                    this.location.map[tileY][tileX] !== 7 &&
+                    this.location.map[tileY][tileX] !== 1) {
 
-                if (this.location.map[tileY] && this.location.map[tileY][tileX] !== 7) {
+                    x = tileX * CONSTANTS.TILE_SIZE;
+                    y = tileY * CONSTANTS.TILE_SIZE;
+
+                    // Проверяем расстояние от точки спавна игрока
                     const distFromSpawn = Math.hypot(
                         x - (this.location.spawnX || 3 * CONSTANTS.TILE_SIZE),
                         y - (this.location.spawnY || 3 * CONSTANTS.TILE_SIZE)
                     );
+
                     if (distFromSpawn > 150) {
                         validSpawn = true;
                     }
                 }
-                attempts++;
             }
 
+            // Если не нашли — ищем любую проходимую точку
             if (!validSpawn) {
                 for (let ty = 2; ty < mapH - 2 && !validSpawn; ty++) {
                     for (let tx = 2; tx < mapW - 2 && !validSpawn; tx++) {
-                        if (this.location.map[ty] && this.location.map[ty][tx] !== 7) {
+                        if (this.location.map[ty] &&
+                            this.location.map[ty][tx] !== 7 &&
+                            this.location.map[ty][tx] !== 1) {
                             x = tx * CONSTANTS.TILE_SIZE;
                             y = ty * CONSTANTS.TILE_SIZE;
                             validSpawn = true;
@@ -80,9 +88,9 @@ class WaveManager {
             }
 
             if (validSpawn) {
-                // 🆕 ArenaBat теперь берётся из Enemy.js (загружается раньше)
                 const bat = new ArenaBat(x, y, powerMultiplier, this.wave);
                 this.location.entities.push(bat);
+                console.log(`✅ Моб заспавнен на координатах: ${x}, ${y}`);
             } else {
                 console.warn(`⚠️ Не удалось найти точку спавна для моба #${i}`);
             }
