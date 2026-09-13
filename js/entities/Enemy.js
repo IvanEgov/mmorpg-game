@@ -1,109 +1,62 @@
-class Enemy {
-    constructor(x, y, enemyType) {
-        this.x = x; this.y = y; this.type = enemyType;
-        const data = CONSTANTS.ENEMIES[enemyType];
-        this.name = data.name;
-        this.icon = data.icon;
-        this.hp = data.hp;
-        this.maxHp = data.hp;
-        this.atk = data.atk;
-        this.speed = data.speed;
-        this.xpReward = data.xpReward;
-        this.goldReward = data.goldReward;
-        this.lootTable = data.lootTable;
-        this.isDead = false;
-        this.hitFlash = 0;
-        this.attackCooldown = 0;
-        this.direction = 'down';
+spawnWave() {
+    this.wave++;
+    const mobCount = CONSTANTS.ARENA.INITIAL_MOBS + (this.wave - 1) * CONSTANTS.ARENA.MOBS_PER_WAVE;
 
-        // === НОВОЕ: Анимация атаки врага ===
-        this.attackAnimation = null;
+    const levelTier = Math.floor(this.playerLevel / CONSTANTS.ARENA.LEVEL_SCALE_INTERVAL);
+    const powerMultiplier = Math.pow(CONSTANTS.ARENA.LEVEL_SCALE_POWER, levelTier);
 
-        // === НОВОЕ: Минимальная дистанция до игрока ===
-        this.minDistance = 40; // Не подходит ближе 40 пикселей
-    }
+    console.log(`🌊 Волна ${this.wave}! Спавним ${mobCount} мобов. Сила: x${powerMultiplier.toFixed(2)}`);
 
-    update(player, location) {
-        if (this.isDead) return;
-        if (this.hitFlash > 0) this.hitFlash--;
-        if (this.attackCooldown > 0) this.attackCooldown--;
+    // 🆕 Получаем реальный размер карты арены
+    const mapW = this.location.mapWidth || CONSTANTS.ARENA.MAP_WIDTH;
+    const mapH = this.location.mapHeight || CONSTANTS.ARENA.MAP_HEIGHT;
 
-        // Обновление анимации атаки
-        if (this.attackAnimation && this.attackAnimation.active) {
-            this.attackAnimation.progress++;
-            if (this.attackAnimation.progress >= this.attackAnimation.duration) {
-                this.attackAnimation.active = false;
-                this.attackAnimation = null;
+    for (let i = 0; i < mobCount; i++) {
+        let x, y;
+        let attempts = 0;
+        let validSpawn = false;
+
+        // 🆕 Умный поиск проходимой точки
+        while (attempts < 100 && !validSpawn) {
+            // Спавним в случайном месте, но с отступом от краёв
+            const tileX = 2 + Math.floor(Math.random() * (mapW - 4));
+            const tileY = 2 + Math.floor(Math.random() * (mapH - 4));
+
+            x = tileX * CONSTANTS.TILE_SIZE;
+            y = tileY * CONSTANTS.TILE_SIZE;
+
+            // Проверяем, что точка проходима
+            if (this.location.map[tileY] && this.location.map[tileY][tileX] !== 7) {
+                // Проверяем, что не слишком близко к точке спавна игрока
+                const distFromSpawn = Math.hypot(
+                    x - (this.location.spawnX || 3 * CONSTANTS.TILE_SIZE),
+                    y - (this.location.spawnY || 3 * CONSTANTS.TILE_SIZE)
+                );
+                if (distFromSpawn > 150) {
+                    validSpawn = true;
+                }
             }
+            attempts++;
         }
 
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const distance = Math.hypot(dx, dy);
-
-        // Направление
-        if (Math.abs(dx) > Math.abs(dy)) {
-            this.direction = dx > 0 ? 'right' : 'left';
-        } else {
-            this.direction = dy > 0 ? 'down' : 'up';
-        }
-
-        // Движение: преследуем, но НЕ ближе minDistance
-        if (distance < 200 && distance > this.minDistance) {
-            const moveX = (dx / distance) * this.speed;
-            const moveY = (dy / distance) * this.speed;
-            const newX = this.x + moveX;
-            const newY = this.y + moveY;
-            const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
-            const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
-
-            // === ИСПРАВЛЕНО: Проверяем границы карты ===
-            if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
-                if (location.map[tileY] && location.map[tileY][tileX] !== 7) {
-                    this.x = newX;
-                    this.y = newY;
+        // Если не нашли хорошую точку — спавним в любом проходимом месте
+        if (!validSpawn) {
+            for (let ty = 2; ty < mapH - 2 && !validSpawn; ty++) {
+                for (let tx = 2; tx < mapW - 2 && !validSpawn; tx++) {
+                    if (this.location.map[ty] && this.location.map[ty][tx] !== 7) {
+                        x = tx * CONSTANTS.TILE_SIZE;
+                        y = ty * CONSTANTS.TILE_SIZE;
+                        validSpawn = true;
+                    }
                 }
             }
         }
 
-        // Атака: бьём если в радиусе атаки
-        if (distance < CONSTANTS.TILE_SIZE * 1.5 && this.attackCooldown === 0) {
-            const dmg = player.takeDamage(this.atk);
-            this.attackCooldown = 60;
-
-            // Запускаем анимацию атаки врага
-            const attackAngle = Math.atan2(player.y - this.y, player.x - this.x);
-            this.attackAnimation = {
-                active: true,
-                progress: 0,
-                duration: 15,
-                angle: attackAngle
-            };
-
-            // Возвращаем урон для всплывающего числа
-            return { damage: dmg, targetX: player.x, targetY: player.y };
+        if (validSpawn) {
+            const bat = new ArenaBat(x, y, powerMultiplier, this.wave);
+            this.location.entities.push(bat);
+        } else {
+            console.warn(`⚠️ Не удалось найти точку спавна для моба #${i}`);
         }
-
-        return null;
-    }
-
-    takeDamage(amount) {
-        if (this.isDead) return false;
-        this.hp -= amount;
-        this.hitFlash = 10;
-        if (this.hp <= 0) {
-            this.hp = 0;
-            this.isDead = true;
-            return true;
-        }
-        return false;
-    }
-
-    getLoot() {
-        const loot = [];
-        for (const drop of this.lootTable) {
-            if (Math.random() < drop.chance) loot.push(drop.itemId);
-        }
-        return loot;
     }
 }

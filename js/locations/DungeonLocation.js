@@ -56,11 +56,15 @@
         const tileY = Math.floor(y / CONSTANTS.TILE_SIZE);
         const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
         const mapH = this.mapHeight || CONSTANTS.MAP_HEIGHT;
+
+        // 🆕 Проверка границ
         if (tileX < 0 || tileY < 0 || tileX >= mapW || tileY >= mapH) return false;
         if (!this.map[tileY]) return false;
+
         const tile = this.map[tileY][tileX];
         return tile !== 1 && tile !== 3 && tile !== 4 && tile !== 5 && tile !== 7;
     }
+      
 
     spawnEnemies() {
         const enemyType = this.dungeonId === 'dungeon_1' ? 'slime' : 'bat';
