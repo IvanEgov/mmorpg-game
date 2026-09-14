@@ -512,11 +512,19 @@ class Game {
         this.camera.apply(this.ctx);
         this.currentLocation.render(this.ctx, this.camera);
 
+        // 🆕 Визуальная индикация заблокированных порталов
         for (const entity of this.currentLocation.entities) {
-            if (entity instanceof Enemy && this.camera.isEntityVisible(entity.x, entity.y)) {
-                if (entity instanceof ArenaBat) entity.render(this.ctx);
-                else if (entity instanceof Boss) entity.render(this.ctx);
-                else this.enemyRenderer.render(this.ctx, entity);
+            if (entity instanceof Portal && entity.targetLocation === 'arena_survival') {
+                const completedEpochs = this.player.completedEpochs || [];
+                if (!completedEpochs.includes('epoch_dungeon')) {
+                    // Рисуем замок поверх портала
+                    const centerX = entity.x + CONSTANTS.TILE_SIZE / 2;
+                    const centerY = entity.y + CONSTANTS.TILE_SIZE / 2;
+                    this.ctx.font = '20px sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText('🔒', centerX, centerY);
+                }
             }
         }
 

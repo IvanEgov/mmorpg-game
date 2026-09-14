@@ -34,18 +34,21 @@
     }
 
     interact(player, game) {
-        // Проверяем, разблокирована ли эпоха
-        if (this.targetLocation.startsWith('epoch_')) {
-            const epochId = this.targetLocation.replace('epoch_', '');
-            const epoch = EPOCHS[epochId];
-
-            if (!epoch) {
-                alert('Эта эпоха ещё не реализована');
+        // 🆕 Проверка разблокировки для арены выживания
+        if (this.targetLocation === 'arena_survival') {
+            const completedEpochs = player.completedEpochs || [];
+            if (!completedEpochs.includes('epoch_dungeon')) {
+                alert('❌ Арена выживания заблокирована!\n\nПобеди Хранителя Руин в Древнем подземелье, чтобы открыть её.');
                 return;
             }
+        }
 
-            if (!epoch.unlocked) {
-                // Проверяем требования
+        // Проверка разблокировки для эпох
+        if (this.targetLocation.startsWith('epoch_') && this.targetLocation !== 'epoch_dungeon') {
+            const epochId = this.targetLocation.replace('epoch_', '');
+            const epoch = typeof EPOCHS !== 'undefined' ? EPOCHS[epochId] : null;
+
+            if (epoch && !epoch.unlocked) {
                 if (epoch.requirements && epoch.requirements.completedEpochs) {
                     const completedEpochs = player.completedEpochs || [];
                     const allCompleted = epoch.requirements.completedEpochs.every(
@@ -53,7 +56,7 @@
                     );
 
                     if (!allCompleted) {
-                        alert(`❌ Требуется завершить: ${epoch.requirements.completedEpochs.join(', ')}`);
+                        alert('❌ Требуется завершить: ' + epoch.requirements.completedEpochs.join(', '));
                         return;
                     }
                 }
