@@ -3,6 +3,9 @@ class Game {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
 
+        // 🆕 ВАЖНО: Инициализируем locations ПЕРВЫМ, до восстановления локации
+        this.locations = {};
+
         // Загрузка сохранения или создание нового игрока
         const savedData = localStorage.getItem('dungeonChronicles_save');
         if (savedData) {
@@ -11,12 +14,12 @@ class Game {
             this.player = new Player(data.player.x, data.player.y);
             this.player.loadFromJSON(data.player);
 
-            // 🆕 ИСПРАВЛЕНИЕ: Проверяем локацию и координаты
             this.currentLocationId = data.currentLocationId || 'city';
 
             // Если игрок был не в городе, пересоздаём локацию
             if (this.currentLocationId !== 'city') {
                 console.log(`🔄 Восстанавливаем локацию: ${this.currentLocationId}`);
+
                 if (this.currentLocationId.startsWith('epoch_')) {
                     const epochId = this.currentLocationId.replace('epoch_', '');
                     if (epochId === 'ancient_ruins') {
@@ -24,19 +27,27 @@ class Game {
                     } else {
                         this.locations[this.currentLocationId] = new DungeonLocation('dungeon_1');
                     }
-                } else {
+                } else if (this.currentLocationId === 'arena_survival' || this.currentLocationId.startsWith('dungeon_')) {
                     this.locations[this.currentLocationId] = new DungeonLocation(this.currentLocationId);
                 }
 
                 // Проверяем, что координаты в пределах карты
                 const location = this.locations[this.currentLocationId];
-                const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
-                const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
+                if (location) {
+                    const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
+                    const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
 
-                if (this.player.x >= mapW || this.player.y >= mapH || this.player.x < 0 || this.player.y < 0) {
-                    console.log('⚠️ Координаты вне карты, перемещаем в безопасную зону');
-                    this.player.x = 3 * CONSTANTS.TILE_SIZE;
-                    this.player.y = 3 * CONSTANTS.TILE_SIZE;
+                    if (this.player.x >= mapW || this.player.y >= mapH || this.player.x < 0 || this.player.y < 0) {
+                        console.log('⚠️ Координаты вне карты, перемещаем в безопасную зону');
+                        this.player.x = 3 * CONSTANTS.TILE_SIZE;
+                        this.player.y = 3 * CONSTANTS.TILE_SIZE;
+                    }
+                } else {
+                    // Если локация не создалась — возвращаем в город
+                    console.log('⚠️ Локация не найдена, возвращаем в город');
+                    this.currentLocationId = 'city';
+                    this.player.x = 15 * CONSTANTS.TILE_SIZE;
+                    this.player.y = 10 * CONSTANTS.TILE_SIZE;
                 }
             }
         } else {
@@ -44,6 +55,9 @@ class Game {
             this.player = new Player(15 * CONSTANTS.TILE_SIZE, 10 * CONSTANTS.TILE_SIZE);
             this.currentLocationId = 'city';
         }
+
+        // Всегда создаём город
+        this.locations['city'] = new CityLocation();
 
         this.playerRenderer = new PlayerRenderer();
         this.enemyRenderer = new EnemyRenderer();
@@ -61,12 +75,9 @@ class Game {
         this.lastTime = 0;
         this.damageNumbers = [];
         this.isPaused = false;
-
-        if (!this.locations['city']) {
-            this.locations['city'] = new CityLocation();
-        }
-        this.currentLocation = this.locations[this.currentLocationId];
         this.otherPlayers = {};
+
+        this.currentLocation = this.locations[this.currentLocationId];
 
         window.gameInstance = this;
         this.setupInput();
