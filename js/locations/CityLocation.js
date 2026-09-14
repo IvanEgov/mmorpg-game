@@ -53,20 +53,36 @@
     }
 
     spawnPortals() {
-        // Портал в подземелье 1 (слаймы)
+        // Портал в первое воплощение (всегда открыт)
         this.entities.push(new Portal(
             Math.floor(CONSTANTS.MAP_WIDTH / 2) * CONSTANTS.TILE_SIZE,
             2 * CONSTANTS.TILE_SIZE,
-            'dungeon_1',
-            '🕳️ Подземелье (Слаймы)'
+            'epoch_ancient_ruins',
+            '🏛️ Древние руины (1-е воплощение)'
         ));
 
-        // 🆕 Портал на арену выживания
+        // Портал на арену (требует завершения первой эпохи)
         this.entities.push(new Portal(
             2 * CONSTANTS.TILE_SIZE,
             Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,
-            'arena_survival',
-            '💀 Арена выживания'
+            'epoch_blood_arena',
+            '⚔️ Арена Крови (2-е воплощение)'
+        ));
+
+        // Портал в средневековье (требует арены)
+        this.entities.push(new Portal(
+            (CONSTANTS.MAP_WIDTH - 3) * CONSTANTS.TILE_SIZE,
+            Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,
+            'epoch_medieval',
+            '🏰 Средневековье (3-е воплощение)'
+        ));
+
+        // Портал в магические земли
+        this.entities.push(new Portal(
+            Math.floor(CONSTANTS.MAP_WIDTH / 2) * CONSTANTS.TILE_SIZE,
+            (CONSTANTS.MAP_HEIGHT - 3) * CONSTANTS.TILE_SIZE,
+            'epoch_magic_lands',
+            '🌿 Магические земли (4-е воплощение)'
         ));
     }
 }

@@ -86,8 +86,8 @@ const CONSTANTS = {
         }
     },
     ARENA: {
-        MAP_WIDTH: 60,
-        MAP_HEIGHT: 40,
+        MAP_WIDTH: 120,
+        MAP_HEIGHT: 100,
         WAVE_INTERVAL: 15000,
         INITIAL_MOBS: 3,
         MOBS_PER_WAVE: 2,

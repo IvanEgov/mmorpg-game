@@ -34,6 +34,32 @@
     }
 
     interact(player, game) {
+        // Проверяем, разблокирована ли эпоха
+        if (this.targetLocation.startsWith('epoch_')) {
+            const epochId = this.targetLocation.replace('epoch_', '');
+            const epoch = EPOCHS[epochId];
+
+            if (!epoch) {
+                alert('Эта эпоха ещё не реализована');
+                return;
+            }
+
+            if (!epoch.unlocked) {
+                // Проверяем требования
+                if (epoch.requirements && epoch.requirements.completedEpochs) {
+                    const completedEpochs = player.completedEpochs || [];
+                    const allCompleted = epoch.requirements.completedEpochs.every(
+                        req => completedEpochs.includes(req)
+                    );
+
+                    if (!allCompleted) {
+                        alert(`❌ Требуется завершить: ${epoch.requirements.completedEpochs.join(', ')}`);
+                        return;
+                    }
+                }
+            }
+        }
+
         game.changeLocation(this.targetLocation);
     }
 }

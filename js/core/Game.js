@@ -81,6 +81,12 @@ class Game {
     // ============ СМЕНА ЛОКАЦИИ ============
     changeLocation(locationId) {
         console.log(`🌀 Переход в: ${locationId}`);
+        // 🆕 Если входим в эпоху
+        if (locationId.startsWith('epoch_')) {
+            const epochId = locationId.replace('epoch_', '');
+            this.player.currentEpoch = epochId;
+            console.log(`📖 Начато воплощение: ${EPOCHS[epochId].name}`);
+        }
 
         if (this.currentLocationId === 'arena_survival' && locationId !== 'arena_survival') {
             this.waveManager.stop();
@@ -91,7 +97,18 @@ class Game {
             this.network.cleanupKilledEnemies(this.currentLocationId);
         }
 
-        if (locationId.startsWith('dungeon_') || locationId === 'arena_survival') {
+        if (locationId.startsWith('epoch_')) {
+            const epochId = locationId.replace('epoch_', '');
+            // Создаём локацию в зависимости от эпохи
+            if (epochId === 'ancient_ruins') {
+                this.locations[locationId] = new AncientRuinsLocation();
+            } else if (epochId === 'blood_arena') {
+                this.locations[locationId] = new DungeonLocation('arena_survival');
+            } else {
+                // Для остальных эпох пока используем заглушку
+                this.locations[locationId] = new DungeonLocation('dungeon_1');
+            }
+        } else if (locationId.startsWith('dungeon_') || locationId === 'arena_survival') {
             this.locations[locationId] = new DungeonLocation(locationId);
         } else if (locationId === 'city' && !this.locations['city']) {
             this.locations['city'] = new CityLocation();
@@ -125,6 +142,10 @@ class Game {
         }
 
         this.saveGame();
+        // 🆕 Если уходим из эпохи
+        if (this.currentLocationId && this.currentLocationId.startsWith('epoch_')) {
+            // Можно добавить проверку завершения эпохи здесь
+        }
     }
 
     // 🆕 Удалить убитых мобов из текущей локации
@@ -155,6 +176,11 @@ class Game {
         console.log('💀 Игрок погиб!');
         this.waveManager.stop();
 
+        // 🆕 Если были в эпохе — завершаем её (с провалом)
+        if (this.player.currentEpoch) {
+            console.log(`❌ Воплощение ${this.player.currentEpoch} завершено с провалом`);
+            this.player.currentEpoch = null;
+        }
         // Показываем экран смерти
         const deathScreen = document.getElementById('death-screen');
         if (deathScreen) {

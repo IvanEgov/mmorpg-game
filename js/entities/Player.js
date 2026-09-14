@@ -33,6 +33,10 @@ class Player {
         this.REGEN_INTERVAL = 60;
         this.REGEN_HP = 1;
         this.REGEN_MP = 2;
+        // 🆕 Система воплощений
+        this.currentEpoch = null;
+        this.completedEpochs = [];
+        this.artifacts = []; // Артефакты из завершённых эпох
     }
 
     get maxHp() {
@@ -73,6 +77,27 @@ class Player {
         return speed;
     }
 
+    completeEpoch(epochId) {
+        if (!this.completedEpochs.includes(epochId)) {
+            this.completedEpochs.push(epochId);
+
+            // Разблокируем следующую эпоху
+            const epoch = EPOCHS[epochId];
+            if (epoch && epoch.rewards && epoch.rewards.nextEpoch) {
+                const nextEpoch = EPOCHS[epoch.rewards.nextEpoch];
+                if (nextEpoch) {
+                    nextEpoch.unlocked = true;
+                    console.log(`🔓 Разблокирована эпоха: ${nextEpoch.name}`);
+                }
+            }
+
+            // Получаем артефакт
+            if (epoch && epoch.rewards && epoch.rewards.artifact) {
+                this.artifacts.push(epoch.rewards.artifact);
+                console.log(`🎁 Получен артефакт: ${epoch.rewards.artifact}`);
+            }
+        }
+    }
     gainXp(amount) {
         this.xp += amount;
         while (this.xp >= this.maxXp) {
@@ -298,7 +323,10 @@ class Player {
                 activeQuests: this.activeQuests,
                 hp: this.hp,
                 mp: this.mp,
-                gold: this.gold
+                gold: this.gold,
+                currentEpoch: this.currentEpoch,
+                completedEpochs: this.completedEpochs,
+                artifacts: this.artifacts
             };
         }
 
