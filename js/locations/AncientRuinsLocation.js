@@ -9,39 +9,38 @@
     }
 
     generateMap() {
-        const mapW = 50;
-        const mapH = 40;
+        const mapW = CONSTANTS.LARGE_MAP_WIDTH;  // 🆕 150
+        const mapH = CONSTANTS.LARGE_MAP_HEIGHT; // 🆕 100
         this.mapWidth = mapW;
         this.mapHeight = mapH;
 
-        // Генерируем случайный лабиринт
         for (let y = 0; y < mapH; y++) {
             this.map[y] = [];
             for (let x = 0; x < mapW; x++) {
                 if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
-                    this.map[y][x] = 7; // Границы карты
-                } else if (Math.random() < 0.3) {
-                    this.map[y][x] = 7; // Случайные стены
+                    this.map[y][x] = 7;
+                } else if (Math.random() < 0.25) {
+                    this.map[y][x] = 7;
                 } else {
-                    this.map[y][x] = 6; // Пол
+                    this.map[y][x] = 6;
                 }
             }
         }
 
-        // 🆕 Создаём безопасную стартовую зону вокруг точки входа (3, 3)
+        // Безопасная стартовая зона
         const spawnX = 3;
         const spawnY = 3;
-        const safeRadius = 2; // Радиус безопасной зоны
+        const safeRadius = 3;
 
         for (let y = spawnY - safeRadius; y <= spawnY + safeRadius; y++) {
             for (let x = spawnX - safeRadius; x <= spawnX + safeRadius; x++) {
                 if (x > 0 && y > 0 && x < mapW - 1 && y < mapH - 1) {
-                    this.map[y][x] = 6; // Гарантированно проходимо
+                    this.map[y][x] = 6;
                 }
             }
         }
 
-        console.log('✅ Стартовая зона создана на координатах:', spawnX, spawnY);
+        console.log(`✅ Карта ${mapW}x${mapH} создана. Стартовая зона: ${spawnX},${spawnY}`);
     }
 
     spawnTreasures() {

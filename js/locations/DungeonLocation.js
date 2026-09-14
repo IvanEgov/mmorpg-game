@@ -35,7 +35,7 @@
                     this.map[y][x] = 7;
                 }
                 // Арена: случайные препятствия-колонны
-                else if (isArena && Math.random() < 0.04 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
+                else if (isArena && Math.random() < 0.03 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
                     this.map[y][x] = 7;
                 }
                 // Обычный данж: препятствия
@@ -48,11 +48,11 @@
                 }
             }
         }
-        // 🆕 Безопасная зона спавна игрока
+        // 🆕 Безопасная зона спавна
         const spawnX = 3;
         const spawnY = 3;
-        for (let y = spawnY - 1; y <= spawnY + 1; y++) {
-            for (let x = spawnX - 1; x <= spawnX + 1; x++) {
+        for (let y = spawnY - 2; y <= spawnY + 2; y++) {
+            for (let x = spawnX - 2; x <= spawnX + 2; x++) {
                 if (x > 0 && y > 0 && x < mapW - 1 && y < mapH - 1) {
                     this.map[y][x] = 6;
                 }

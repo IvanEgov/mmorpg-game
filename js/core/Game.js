@@ -472,15 +472,14 @@ class Game {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Применяем камеру
         this.camera.apply(this.ctx);
 
-        // Карта
-        this.currentLocation.render(this.ctx);
+        // 🆕 Передаём камеру в render для culling
+        this.currentLocation.render(this.ctx, this.camera);
 
-        // Враги
+        // 🆕 Рендерим врагов только если они видны
         for (const entity of this.currentLocation.entities) {
-            if (entity instanceof Enemy) {
+            if (entity instanceof Enemy && this.camera.isEntityVisible(entity.x, entity.y)) {
                 if (entity instanceof ArenaBat) {
                     entity.render(this.ctx);
                 } else {
@@ -489,9 +488,11 @@ class Game {
             }
         }
 
-        // Другие игроки
+        // 🆕 Рендерим других игроков только если они видны
         for (const other of Object.values(this.otherPlayers)) {
-            this.otherPlayerRenderer.render(this.ctx, other);
+            if (this.camera.isEntityVisible(other.x, other.y)) {
+                this.otherPlayerRenderer.render(this.ctx, other);
+            }
         }
 
         // Твой персонаж

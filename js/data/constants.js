@@ -6,6 +6,11 @@ const CONSTANTS = {
     CANVAS_HEIGHT: 640,
     MAP_WIDTH: 30,
     MAP_HEIGHT: 20,
+
+    // 🆕 Размеры для больших локаций
+    LARGE_MAP_WIDTH: 150,   // Было 60
+    LARGE_MAP_HEIGHT: 100,  // Было 40
+
     PLAYER_SPEED: 3,
     ATTACK_RANGE: 60,
     ATTACK_COOLDOWN: 25,
@@ -86,11 +91,11 @@ const CONSTANTS = {
         }
     },
     ARENA: {
-        MAP_WIDTH: 120,
+        MAP_WIDTH: 150,
         MAP_HEIGHT: 100,
         WAVE_INTERVAL: 15000,
-        INITIAL_MOBS: 3,
-        MOBS_PER_WAVE: 2,
+        INITIAL_MOBS: 5,
+        MOBS_PER_WAVE: 3,
         LEVEL_SCALE_INTERVAL: 3,
         LEVEL_SCALE_POWER: 1.5,
         BAT_BASE_HP: 20,
