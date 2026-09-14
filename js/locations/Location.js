@@ -8,8 +8,11 @@
     }
 
     update(player) {
+        // 🆕 Рендерим сущности кроме Enemy (их рендерит Game)
         for (const entity of this.entities) {
-            if (entity.update) entity.update(player, this);
+            if (entity.render && !(entity instanceof Enemy) && camera.isEntityVisible(entity.x, entity.y)) {
+                entity.render(ctx);
+            }
         }
     }
 

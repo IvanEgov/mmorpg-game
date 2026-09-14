@@ -13,10 +13,13 @@
     // 🆕 Спавн слаймов для квеста
     spawnSlimes() {
         const rng = new SeededRandom(this.dungeonId + '_slimes');
-        const slimeCount = 15; // В 3 раза больше
+        const slimeCount = 15;
+        let spawned = 0;
 
         for (let i = 0; i < slimeCount; i++) {
             let x, y, attempts = 0;
+            let valid = false;
+
             do {
                 const tileX = rng.nextInt(5, this.mapWidth - 5);
                 const tileY = rng.nextInt(5, this.mapHeight - 5);
@@ -24,26 +27,25 @@
                 y = tileY * CONSTANTS.TILE_SIZE;
                 attempts++;
 
-                // Не спавним в центре (там босс)
                 const centerTileX = Math.floor(this.mapWidth / 2);
                 const centerTileY = Math.floor(this.mapHeight / 2);
-                if (Math.abs(tileX - centerTileX) < 10 && Math.abs(tileY - centerTileY) < 10) {
-                    continue;
-                }
+                if (Math.abs(tileX - centerTileX) < 10 && Math.abs(tileY - centerTileY) < 10) continue;
 
-                // Не спавним рядом со стартом игрока
                 const distFromStart = Math.hypot(x - 3 * CONSTANTS.TILE_SIZE, y - 3 * CONSTANTS.TILE_SIZE);
-                if (distFromStart < 200) {
-                    continue;
-                }
-            } while (!this.isWalkable(x, y) && attempts < 50);
+                if (distFromStart < 200) continue;
 
-            if (this.isWalkable(x, y)) {
+                if (this.isWalkable(x, y)) {
+                    valid = true;
+                }
+            } while (!valid && attempts < 100);
+
+            if (valid) {
                 this.entities.push(new Enemy(x, y, 'slime'));
+                spawned++;
             }
         }
 
-        console.log('🟢 Заспавнено ' + slimeCount + ' слаймов');
+        console.log('🟢 Заспавнено ' + spawned + ' слаймов из ' + slimeCount);
     }
 
     generateMap() {

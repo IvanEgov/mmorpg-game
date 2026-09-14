@@ -1,26 +1,26 @@
 ﻿const EPOCHS = {
-    'ancient_ruins': {
-        id: 'ancient_ruins',
-        name: 'Древние руины',
-        description: 'Первое воплощение. Искатель сокровищ в заброшенных храмах.',
+    'epoch_dungeon': {
+        id: 'epoch_dungeon',
+        name: 'Древнее подземелье',
+        description: 'Первое воплощение. Победи Хранителя Руин.',
         icon: '🏛️',
-        type: 'treasure_hunting',
+        type: 'dungeon',
         unlocked: true,
         requirements: null,
         rewards: {
-            nextEpoch: 'blood_arena',
+            nextEpoch: 'arena_survival',
             artifact: 'ancient_compass'
         }
     },
-    'blood_arena': {
-        id: 'blood_arena',
-        name: 'Арена Крови',
+    'arena_survival': {
+        id: 'arena_survival',
+        name: 'Арена выживания',
         description: 'Второе воплощение. Бесконечные волны врагов.',
         icon: '⚔️',
         type: 'survival',
         unlocked: false,
         requirements: {
-            completedEpochs: ['ancient_ruins']
+            completedEpochs: ['epoch_dungeon']
         },
         rewards: {
             nextEpoch: 'medieval',
@@ -35,7 +35,7 @@
         type: 'building',
         unlocked: false,
         requirements: {
-            completedEpochs: ['blood_arena']
+            completedEpochs: ['arena_survival']
         },
         rewards: {
             nextEpoch: 'magic_lands',
@@ -57,5 +57,4 @@
             artifact: 'philosophers_stone'
         }
     }
-    // ... остальные 5 эпох добавим позже
 };

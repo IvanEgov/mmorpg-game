@@ -358,22 +358,23 @@ class Game {
     handleBossDefeat(boss) {
         console.log('🏆 Босс ' + boss.name + ' повержен!');
 
-        // Разблокируем следующую эпоху
+        // 🆕 ИСПРАВЛЕНО: используем полный ID локации
+        const currentEpochId = this.currentLocationId; // 'epoch_dungeon'
         if (this.player.completeEpoch) {
-            const currentEpochId = this.currentLocationId.replace('epoch_', '');
             this.player.completeEpoch(currentEpochId);
         }
 
-        // Показываем сообщение
         this.showBossDefeatMessage(boss);
 
-        // Создаём портал в новую эпоху
+        // 🆕 ИСПРАВЛЕНО: создаём портал именно в arena_survival
         const portalX = boss.x;
         const portalY = boss.y;
+        const nextLocation = boss.unlocksEpoch === 'blood_arena' ? 'arena_survival' : 'epoch_' + boss.unlocksEpoch;
+
         const newPortal = new Portal(
             portalX, portalY,
-            'epoch_' + boss.unlocksEpoch,
-            '✨ Портал в ' + (EPOCHS[boss.unlocksEpoch]?.name || 'новую эпоху')
+            nextLocation,
+            '✨ Портал: ' + (nextLocation === 'arena_survival' ? 'Арена выживания' : nextLocation)
         );
         this.currentLocation.entities.push(newPortal);
 
@@ -510,27 +511,32 @@ class Game {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.camera.apply(this.ctx);
+
+        // Карта (с culling)
         this.currentLocation.render(this.ctx, this.camera);
 
-        // 🆕 Визуальная индикация заблокированных порталов
+        // 🆕 Рендерим ВСЕХ врагов без culling (чтобы не пропали)
         for (const entity of this.currentLocation.entities) {
-            if (entity instanceof Portal && entity.targetLocation === 'arena_survival') {
-                const completedEpochs = this.player.completedEpochs || [];
-                if (!completedEpochs.includes('epoch_dungeon')) {
-                    // Рисуем замок поверх портала
-                    const centerX = entity.x + CONSTANTS.TILE_SIZE / 2;
-                    const centerY = entity.y + CONSTANTS.TILE_SIZE / 2;
-                    this.ctx.font = '20px sans-serif';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.textBaseline = 'middle';
-                    this.ctx.fillText('🔒', centerX, centerY);
+            if (entity instanceof Enemy) {
+                if (this.camera.isEntityVisible(entity.x, entity.y, 100)) {
+                    if (entity instanceof Boss) entity.render(this.ctx);
+                    else if (entity instanceof ArenaBat) entity.render(this.ctx);
+                    else this.enemyRenderer.render(this.ctx, entity);
                 }
             }
         }
 
+        // Другие игроки
         for (const other of Object.values(this.otherPlayers)) {
             if (this.camera.isEntityVisible(other.x, other.y)) {
                 this.otherPlayerRenderer.render(this.ctx, other);
+            }
+        }
+
+        // 🆕 Названия и замки над порталами
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof Portal) {
+                this.renderPortalLabel(entity);
             }
         }
 
@@ -538,13 +544,53 @@ class Game {
         this.renderDamageNumbers();
         this.camera.restore(this.ctx);
 
-        // 🆕 HUD рисуется ПОСЛЕ camera.restore() — в экранных координатах
+        // HUD (поверх камеры)
         if (this.currentLocation.boss && !this.currentLocation.boss.isDead) {
             this.renderBossHUD(this.currentLocation.boss);
         }
 
         if (this.currentLocationId === 'arena_survival' && this.waveManager.active) {
             this.renderArenaHUD();
+        }
+    }
+
+    // 🆕 Отрисовка названия и замка над порталом
+    renderPortalLabel(portal) {
+        const ctx = this.ctx;
+        const centerX = portal.x + CONSTANTS.TILE_SIZE / 2;
+        const centerY = portal.y - 12;
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        // Проверяем, заблокирован ли портал
+        let isLocked = false;
+        if (portal.targetLocation === 'arena_survival') {
+            const completed = this.player.completedEpochs || [];
+            isLocked = !completed.includes('epoch_dungeon');
+        } else if (portal.targetLocation.startsWith('epoch_') && portal.targetLocation !== 'epoch_dungeon') {
+            const epochId = portal.targetLocation.replace('epoch_', '');
+            const epoch = typeof EPOCHS !== 'undefined' ? EPOCHS[epochId] : null;
+            if (epoch && !epoch.unlocked) isLocked = true;
+        }
+
+        // Название портала
+        const label = portal.label;
+        const textWidth = ctx.measureText(label).width;
+
+        // Фон
+        ctx.fillStyle = isLocked ? 'rgba(100,0,0,0.8)' : 'rgba(0,0,0,0.7)';
+        ctx.fillRect(centerX - textWidth / 2 - 6, centerY - 14, textWidth + 12, 18);
+
+        // Текст
+        ctx.fillStyle = isLocked ? '#ff6666' : '#fff';
+        ctx.fillText(label, centerX, centerY);
+
+        // Замок
+        if (isLocked) {
+            ctx.font = '18px sans-serif';
+            ctx.fillText('🔒', centerX, centerY - 16);
         }
     }
     renderBossHUD(boss) {

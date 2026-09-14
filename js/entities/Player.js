@@ -81,23 +81,24 @@ class Player {
         if (!this.completedEpochs) this.completedEpochs = [];
         if (!this.artifacts) this.artifacts = [];
 
+        // 🆕 ИСПРАВЛЕНО: сохраняем полный ID (например 'epoch_dungeon')
         if (!this.completedEpochs.includes(epochId)) {
             this.completedEpochs.push(epochId);
             console.log('✅ Эпоха ' + epochId + ' завершена!');
 
-            // Разблокируем следующую эпоху
-            const epoch = EPOCHS[epochId];
-            if (epoch && epoch.rewards && epoch.rewards.nextEpoch) {
-                const nextEpoch = EPOCHS[epoch.rewards.nextEpoch];
-                if (nextEpoch) {
-                    nextEpoch.unlocked = true;
-                    console.log('🔓 Разблокирована эпоха: ' + nextEpoch.name);
+            const epoch = typeof EPOCHS !== 'undefined' ? EPOCHS[epochId] : null;
+            if (epoch && epoch.rewards) {
+                if (epoch.rewards.nextEpoch) {
+                    const nextEpoch = EPOCHS[epoch.rewards.nextEpoch];
+                    if (nextEpoch) {
+                        nextEpoch.unlocked = true;
+                        console.log('🔓 Разблокирована эпоха: ' + nextEpoch.name);
+                    }
                 }
-            }
-
-            if (epoch && epoch.rewards && epoch.rewards.artifact) {
-                this.artifacts.push(epoch.rewards.artifact);
-                console.log('🎁 Получен артефакт: ' + epoch.rewards.artifact);
+                if (epoch.rewards.artifact) {
+                    this.artifacts.push(epoch.rewards.artifact);
+                    console.log('🎁 Получен артефакт: ' + epoch.rewards.artifact);
+                }
             }
         }
     }
