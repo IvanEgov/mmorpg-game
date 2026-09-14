@@ -66,7 +66,8 @@ class WaveManager {
                         y - (this.location.spawnY || 3 * CONSTANTS.TILE_SIZE)
                     );
 
-                    if (distFromSpawn > 150) {
+                    // 🆕 Мобы спавнятся минимум в 200 пикселях от игрока
+                    if (distFromSpawn > 200) {
                         validSpawn = true;
                     }
                 }

@@ -48,6 +48,16 @@
                 }
             }
         }
+        // 🆕 Безопасная зона спавна игрока
+        const spawnX = 3;
+        const spawnY = 3;
+        for (let y = spawnY - 1; y <= spawnY + 1; y++) {
+            for (let x = spawnX - 1; x <= spawnX + 1; x++) {
+                if (x > 0 && y > 0 && x < mapW - 1 && y < mapH - 1) {
+                    this.map[y][x] = 6;
+                }
+            }
+        }
     }
 
     // Переопределяем isWalkable для больших карт
