@@ -254,4 +254,43 @@
             }
         });
     }
+    // 🆕 Отправка состояния босса в Firebase (вызывается из Game.update)
+    updateBossState(locationId, boss) {
+        if (!this.connected || !boss) return;
+
+        const now = Date.now();
+        if (!this.lastBossUpdate) this.lastBossUpdate = 0;
+
+        // Ограничиваем частоту обновлений до 10 раз в секунду (100мс), чтобы не спамить Firebase
+        if (now - this.lastBossUpdate < 100) return;
+        this.lastBossUpdate = now;
+
+        this.db.ref('boss_state/' + locationId).update({
+            x: Math.floor(boss.x),
+            y: Math.floor(boss.y),
+            hp: Math.floor(boss.hp),
+            maxHp: boss.maxHp,
+            direction: boss.direction,
+            isEnraged: boss.isEnraged,
+            lastUpdate: now
+        });
+    }
+
+    // 🆕 Подписка на состояние босса (вызывается из Game.changeLocation)
+    subscribeToBossState(locationId, callback) {
+        if (!this.connected) return;
+
+        this.db.ref('boss_state/' + locationId).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                callback(data);
+            }
+        });
+    }
+
+    // 🆕 Очистка состояния босса при выходе
+    cleanupBossState(locationId) {
+        if (!this.connected) return;
+        this.db.ref('boss_state/' + locationId).remove();
+    }
 }

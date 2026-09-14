@@ -124,10 +124,10 @@ class Game {
        //     this.network.cleanupOpenedChests(this.currentLocationId);
        // }
 
-        if (locationId !== 'city') {
-            delete this.locations[locationId];
-            this.createLocation(locationId);
-        }
+     //   if (locationId !== 'city') {
+       //     delete this.locations[locationId];
+       //     this.createLocation(locationId);
+      //  }
 
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId] || this.locations['city'];
@@ -146,22 +146,29 @@ class Game {
         document.getElementById('location-name').textContent = this.currentLocation.name;
 
         // 🆕 Загружаем данные синхронизации для всех локаций кроме города
+        // 🆕 Загружаем данные синхронизации для всех локаций кроме города
         if (locationId !== 'city') {
-            // Загружаем убитых мобов
+            // 🆕 1. Подписываемся на состояние босса в реальном времени
+            this.network.subscribeToBossState(locationId, (bossData) => {
+                this.syncBossState(bossData);
+            });
+
+            // 2. Загружаем убитых мобов
             this.network.getKilledEnemies(locationId, (killedIds) => {
                 this.removeKilledEnemies(killedIds);
             });
 
-            // Загружаем открытые сундуки
+            // 3. Загружаем открытые сундуки
             this.network.getOpenedChests(locationId, (openedIds) => {
                 this.markOpenedChests(openedIds);
             });
 
-            // 🆕 Подписываемся на обновления в реальном времени
+            // 4. Подписываемся на общие обновления
             this.network.subscribeToLocationUpdates(locationId, (updates) => {
                 this.applyLocationUpdates(updates);
             });
         }
+
 
         if (locationId === 'arena_survival') {
             this.startArena();
@@ -540,6 +547,11 @@ class Game {
 
         this.currentLocation.update(this.player);
 
+        // 🆕 Синхронизация босса
+        if (this.currentLocation.boss && !this.currentLocation.boss.isDead) {
+            this.network.updateBossState(this.currentLocationId, this.currentLocation.boss);
+        }
+
         for (const entity of this.currentLocation.entities) {
             if (entity instanceof Enemy) {
                 const attackResult = entity.update(this.player, this.currentLocation);
@@ -752,7 +764,21 @@ class Game {
         ctx.fillRect(20, 70, 260 * progress, 10);
         ctx.restore();
     }
+    // 🆕 Синхронизация состояния босса (получение данных из Firebase)
+    syncBossState(bossData) {
+        // Если босса нет или он уже мёртв, игнорируем
+        if (!this.currentLocation.boss || this.currentLocation.boss.isDead) return;
 
+        // Плавная интерполяция позиции (чтобы босс не "дергался" при обновлении)
+        const lerp = 0.2;
+        this.currentLocation.boss.x += (bossData.x - this.currentLocation.boss.x) * lerp;
+        this.currentLocation.boss.y += (bossData.y - this.currentLocation.boss.y) * lerp;
+
+        // Синхронизация HP и состояния ярости
+        this.currentLocation.boss.hp = bossData.hp;
+        this.currentLocation.boss.direction = bossData.direction;
+        this.currentLocation.boss.isEnraged = bossData.isEnraged;
+    }
     loop(timestamp) {
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
