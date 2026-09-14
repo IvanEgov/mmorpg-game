@@ -1,10 +1,14 @@
 ﻿class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super(x, y, bossData.type || 'boss');
+        // 🆕 Передаём валидный тип 'bat' (чтобы super() не упал)
+        // Все данные босса переопределим ниже
+        super(x, y, 'bat');
 
+        // 🆕 Полностью переопределяем данные босса
         this.bossId = bossData.id;
         this.name = bossData.name;
         this.icon = bossData.icon;
+        this.type = 'boss';
         this.hp = bossData.hp;
         this.maxHp = bossData.hp;
         this.atk = bossData.atk;
@@ -35,7 +39,6 @@
         if (this.specialCooldown > 0) this.specialCooldown--;
         this.pulseTimer++;
 
-        // Обновление анимации
         if (this.attackAnimation && this.attackAnimation.active) {
             this.attackAnimation.progress++;
             if (this.attackAnimation.progress >= this.attackAnimation.duration) {
@@ -44,7 +47,7 @@
             }
         }
 
-        // 🆕 Фаза ярости при HP < 50%
+        // Фаза ярости при HP < 50%
         if (this.hp < this.maxHp / 2 && !this.isEnraged) {
             this.isEnraged = true;
             this.speed = this.baseSpeed * 1.5;
@@ -56,14 +59,12 @@
         const dy = player.y - this.y;
         const distance = Math.hypot(dx, dy);
 
-        // Направление
         if (Math.abs(dx) > Math.abs(dy)) {
             this.direction = dx > 0 ? 'right' : 'left';
         } else {
             this.direction = dy > 0 ? 'down' : 'up';
         }
 
-        // Преследование
         if (distance < this.detectionRange && distance > this.minDistance) {
             const moveX = (dx / distance) * this.speed;
             const moveY = (dy / distance) * this.speed;
@@ -87,7 +88,6 @@
             }
         }
 
-        // Атака
         if (distance < CONSTANTS.TILE_SIZE * 2 && this.attackCooldown === 0) {
             const dmg = player.takeDamage(this.atk);
             this.attackCooldown = 45;
@@ -113,7 +113,7 @@
         const centerX = this.x + ts / 2;
         const centerY = this.y + ts / 2;
 
-        // 🆕 Пульсирующая аура
+        // Пульсирующая аура
         const pulse = Math.sin(this.pulseTimer * 0.05) * 5;
         const auraColor = this.isEnraged ? this.enragedColor : this.color;
 
