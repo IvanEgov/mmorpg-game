@@ -131,25 +131,29 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 
-    <!-- 1. КОНСТАНТЫ (всегда первые!) -->
+    <!-- 1. КОНСТАНТЫ (Всегда первые!) -->
     <script src="js/data/constants.js"></script>
     <script src="js/data/epochs.js"></script>
 
     <!-- 2. Утилиты -->
     <script src="js/utils/SeededRandom.js"></script>
 
-    <!-- 3. Базовые классы локаций и сущностей -->
+    <!-- 3. БАЗОВЫЕ КЛАССЫ (Фундамент, должен быть до конкретных локаций) -->
     <script src="js/locations/Location.js"></script>
+    <script src="js/locations/EpochLocation.js"></script>  <!-- 🆕 ВОТ ЭТОГО НЕ ХВАТАЛО! -->
+    <!-- 4. БАЗОВЫЕ СУЩНОСТИ -->
     <script src="js/entities/Player.js"></script>
     <script src="js/entities/Enemy.js"></script>
     <script src="js/entities/Boss.js"></script>
-    <script src="js/entities/Tower.js"></script>  <!-- 🆕 ДОБАВЛЕНО -->
-    <!-- 4. Конкретные локации (зависят от Location.js и Enemy.js) -->
+    <script src="js/entities/Tower.js"></script>
+
+    <!-- 5. КОНКРЕТНЫЕ ЛОКАЦИИ (Теперь EpochLocation уже загружен, AncientRuinsLocation сработает) -->
     <script src="js/locations/CityLocation.js"></script>
     <script src="js/locations/DungeonLocation.js"></script>
     <script src="js/locations/AncientRuinsLocation.js"></script>
-    <script src="js/locations/CastleLocation.js"></script>  <!-- 🆕 ДОБАВЛЕНО -->
-    <!-- 5. Остальные сущности -->
+    <script src="js/locations/CastleLocation.js"></script>
+
+    <!-- 6. РЕНДЕР И ДОП. СУЩНОСТИ -->
     <script src="js/entities/PlayerRenderer.js"></script>
     <script src="js/entities/EnemyRenderer.js"></script>
     <script src="js/entities/NPC.js"></script>
@@ -158,18 +162,16 @@
     <script src="js/entities/OtherPlayer.js"></script>
     <script src="js/entities/OtherPlayerRenderer.js"></script>
 
-    <!-- 6. Системы и Сеть -->
+    <!-- 7. СИСТЕМЫ И СЕТЬ -->
     <script src="js/core/Camera.js"></script>
     <script src="js/systems/WaveManager.js"></script>
     <script src="js/network/NetworkManager.js"></script>
     <script src="js/core/UIManager.js"></script>
 
-    <!-- 7. Ядро игры (должно быть ПОСЛЕ всех локаций и сущностей!) -->
+    <!-- 8. ЯДРО ИГРЫ (Собирает всё воедино, должно быть ПОСЛЕ всех локаций) -->
     <script src="js/core/Game.js"></script>
 
-    <!-- 8. Точка входа -->
+    <!-- 9. ТОЧКА ВХОДА -->
     <script src="js/main.js"></script>
-</body>
-</html>
 </body>
 </html>
