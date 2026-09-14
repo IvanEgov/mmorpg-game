@@ -25,7 +25,6 @@ class Enemy {
         this.minDistance = 40;
         this.detectionRange = 99999;
     }
-
     update(player, location) {
         if (this.isDead) return null;
         if (this.hitFlash > 0) this.hitFlash--;
@@ -52,7 +51,20 @@ class Enemy {
         const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
         const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
 
-        // 🆕 Движение с проверкой проходимости
+        // 🆕 Инициализация счётчика застревания
+        if (!this.stuckCounter) this.stuckCounter = 0;
+        if (!this.lastX) this.lastX = this.x;
+        if (!this.lastY) this.lastY = this.y;
+
+        // Проверяем, застрял ли моб
+        if (Math.abs(this.x - this.lastX) < 0.5 && Math.abs(this.y - this.lastY) < 0.5) {
+            this.stuckCounter++;
+        } else {
+            this.stuckCounter = 0;
+        }
+        this.lastX = this.x;
+        this.lastY = this.y;
+
         if (distance < this.detectionRange && distance > this.minDistance) {
             const moveX = (dx / distance) * this.speed;
             const moveY = (dy / distance) * this.speed;
@@ -68,14 +80,18 @@ class Enemy {
             const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
             const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
-            // 🆕 Проверяем, что новая позиция проходима
+            // Проверяем проходимость
             if (tileX >= 0 && tileY >= 0 && tileX < mapW / CONSTANTS.TILE_SIZE && tileY < mapH / CONSTANTS.TILE_SIZE) {
                 if (location.map[tileY] && location.map[tileY][tileX] !== 7 && location.map[tileY][tileX] !== 1) {
                     this.x = newX;
                     this.y = newY;
                 } else {
-                    // 🆕 Если упёрлись в стену — пробуем обойти
-                    this.tryAvoidObstacle(dx, dy, location, mapW, mapH);
+                    // 🆕 Если застрял — используем умный обход
+                    if (this.stuckCounter > 10) {
+                        this.smartAvoidObstacle(player, location, mapW, mapH);
+                    } else {
+                        this.tryAvoidObstacle(dx, dy, location, mapW, mapH);
+                    }
                 }
             }
         }
@@ -96,6 +112,56 @@ class Enemy {
         }
 
         return null;
+    }
+
+    // 🆕 Умный обход препятствий
+    smartAvoidObstacle(player, location, mapW, mapH) {
+        // Пробуем 4 направления и выбираем лучшее
+        const directions = [
+            { x: 1, y: 0 },   // Вправо
+            { x: -1, y: 0 },  // Влево
+            { x: 0, y: 1 },   // Вниз
+            { x: 0, y: -1 }   // Вверх
+        ];
+
+        let bestDir = null;
+        let bestScore = -Infinity;
+
+        for (const dir of directions) {
+            const testX = this.x + dir.x * this.speed * 3;
+            const testY = this.y + dir.y * this.speed * 3;
+
+            let testTileX = Math.floor((testX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
+            let testTileY = Math.floor((testY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
+
+            // Wrap-around
+            if (testTileX < 0) testTileX = Math.floor(mapW / CONSTANTS.TILE_SIZE) - 1;
+            if (testTileX >= mapW / CONSTANTS.TILE_SIZE) testTileX = 0;
+            if (testTileY < 0) testTileY = Math.floor(mapH / CONSTANTS.TILE_SIZE) - 1;
+            if (testTileY >= mapH / CONSTANTS.TILE_SIZE) testTileY = 0;
+
+            // Проверяем проходимость
+            if (location.map[testTileY] &&
+                location.map[testTileY][testTileX] !== 7 &&
+                location.map[testTileY][testTileX] !== 1) {
+
+                // Оцениваем направление: чем ближе к игроку — тем лучше
+                const distToPlayer = Math.hypot(testX - player.x, testY - player.y);
+                const score = -distToPlayer; // Отрицательное расстояние (меньше = лучше)
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestDir = dir;
+                }
+            }
+        }
+
+        // Двигаемся в лучшем направлении
+        if (bestDir) {
+            this.x += bestDir.x * this.speed;
+            this.y += bestDir.y * this.speed;
+            this.stuckCounter = 0; // Сбрасываем счётчик
+        }
     }
 
     // 🆕 Метод обхода препятствий
