@@ -101,7 +101,7 @@ const CONSTANTS = {
         BAT_BASE_HP: 20,
         BAT_BASE_ATK: 8,
         BAT_BASE_SPEED: 2.0
-    }
+    },
         BOSSES: {
         'ruins_guardian': {
             id: 'ruins_guardian',
