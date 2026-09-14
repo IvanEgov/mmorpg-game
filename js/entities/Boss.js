@@ -17,7 +17,11 @@
         this.goldReward = bossData.goldReward;
         this.lootTable = bossData.lootTable || [];
         this.size = bossData.size || 2;
-        this.uniqueId = 'boss_' + this.bossId;
+
+        // 🆕 Фиксированный uniqueId для синхронизации между игроками
+        this.uniqueId = 'boss_' + this.bossId + '_' + Math.floor(x) + '_' + Math.floor(y);
+
+
         this.detectionRange = 99999;
         this.minDistance = 60;
         this.attackAnimation = null;

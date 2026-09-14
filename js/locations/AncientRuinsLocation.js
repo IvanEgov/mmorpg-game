@@ -132,7 +132,8 @@
 
         const boss = new Boss(centerX, centerY, bossData);
         // 🆕 Уникальный ID босса (одинаковый у всех игроков)
-        boss.uniqueId = 'boss_ruins_guardian';
+        // 🆕 Фиксированный uniqueId (должен совпадать с тем, что в конструкторе Boss)
+        boss.uniqueId = 'boss_ruins_guardian_' + Math.floor(centerX) + '_' + Math.floor(centerY);
         this.entities.push(boss);
         this.boss = boss;
 

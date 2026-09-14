@@ -1,6 +1,6 @@
 ﻿class OtherPlayerRenderer {
     render(ctx, otherPlayer) {
-        console.log('🟢 OtherPlayerRenderer.render вызван для:', otherPlayer.name, 'X:', otherPlayer.x, 'Y:', otherPlayer.y);
+      //  console.log('🟢 OtherPlayerRenderer.render вызван для:', otherPlayer.name, 'X:', otherPlayer.x, 'Y:', otherPlayer.y);
 
         const ts = CONSTANTS.TILE_SIZE;
         const centerX = otherPlayer.x + ts / 2;
@@ -55,6 +55,6 @@
         ctx.fillStyle = '#ff0000';
         ctx.fillRect(otherPlayer.x, otherPlayer.y - 8, ts * hpPercent, 5);
 
-        console.log('✅ Отрисовка другого игрока завершена');
+       // console.log('✅ Отрисовка другого игрока завершена');
     }
 }

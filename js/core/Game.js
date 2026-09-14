@@ -117,11 +117,12 @@ class Game {
         if (this.currentLocationId === 'arena_survival' && locationId !== 'arena_survival') {
             this.waveManager.stop();
         }
-
-        if (this.currentLocationId && this.currentLocationId !== locationId) {
-            this.network.cleanupKilledEnemies(this.currentLocationId);
-            this.network.cleanupOpenedChests(this.currentLocationId);
-        }
+        // 🆕 НЕ удаляем данные об убитых мобах и сундуках при выходе
+        // Они должны сохраняться, чтобы другие игроки видели обновления
+      //  if (this.currentLocationId && this.currentLocationId !== locationId) {
+       //     this.network.cleanupKilledEnemies(this.currentLocationId);
+       //     this.network.cleanupOpenedChests(this.currentLocationId);
+       // }
 
         if (locationId !== 'city') {
             delete this.locations[locationId];
@@ -372,9 +373,11 @@ class Game {
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
 
-                // 🆕 Синхронизируем убийство с другими игроками
+                // 🆕 Синхронизируем убийство (работает и для боссов)
                 this.network.reportEnemyKilled(result.enemy.uniqueId, this.currentLocationId);
+                console.log('💀 Убит: ' + result.enemy.uniqueId);
 
+           
                 const loot = result.enemy.getLoot();
                 loot.forEach(itemId => {
                     this.player.addItem(itemId);
