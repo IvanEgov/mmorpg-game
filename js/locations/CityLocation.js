@@ -52,7 +52,8 @@
         this.entities.push(new NPC(24 * CONSTANTS.TILE_SIZE, 12 * CONSTANTS.TILE_SIZE, 'elder', '👑 Старейшина'));
     }
     spawnPortals() {
-        // 🆕 Портал в подземелье с боссом
+        
+        // 🆕 ПЕРВЫЙ портал — подземелье с боссом
         this.entities.push(new Portal(
             Math.floor(CONSTANTS.MAP_WIDTH / 2) * CONSTANTS.TILE_SIZE,
             2 * CONSTANTS.TILE_SIZE,
@@ -60,7 +61,7 @@
             '🏛️ Древнее подземелье (с боссом)'
         ));
 
-        // 🆕 Портал на арену выживания
+        // 🆕 ВТОРОЙ портал — арена выживания
         this.entities.push(new Portal(
             2 * CONSTANTS.TILE_SIZE,
             Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,

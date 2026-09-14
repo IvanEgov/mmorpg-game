@@ -176,15 +176,25 @@ class Player {
         }
     }
     move(dx, dy, map) {
-        if (dx > 0) this.direction = 'right';
-        if (dx < 0) this.direction = 'left';
-        if (dy > 0) this.direction = 'down';
-        if (dy < 0) this.direction = 'up';
+        // 🆕 Обновляем направление только если движение значительное
+        const moveThreshold = 0.3; // Минимальная величина для обновления направления
+
+        if (Math.abs(dx) > moveThreshold || Math.abs(dy) > moveThreshold) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Горизонтальное движение преобладает
+                if (dx > 0) this.direction = 'right';
+                else if (dx < 0) this.direction = 'left';
+            } else {
+                // Вертикальное движение преобладает
+                if (dy > 0) this.direction = 'down';
+                else if (dy < 0) this.direction = 'up';
+            }
+        }
 
         let newX = this.x + dx * this.speed;
         let newY = this.y + dy * this.speed;
 
-        // 🆕 Wrap-around: бесконечная карта
+        // Wrap-around: бесконечная карта
         const mapW = (window.gameInstance?.currentLocation?.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
         const mapH = (window.gameInstance?.currentLocation?.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
 
