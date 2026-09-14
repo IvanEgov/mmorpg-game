@@ -16,10 +16,12 @@ class Camera {
     }
 
     clamp(mapWidth, mapHeight) {
-        if (this.x < 0) this.x = 0;
-        if (this.y < 0) this.y = 0;
-        if (this.x > mapWidth - this.canvasWidth) this.x = mapWidth - this.canvasWidth;
-        if (this.y > mapHeight - this.canvasHeight) this.y = mapHeight - this.canvasHeight;
+        // 🆕 Для бесконечной карты не ограничиваем камеру
+        // Камера всегда следует за игроком
+        //if (this.x < 0) this.x = 0;
+       // if (this.y < 0) this.y = 0;
+      //  if (this.x > mapWidth - this.canvasWidth) this.x = mapWidth - this.canvasWidth;
+       // if (this.y > mapHeight - this.canvasHeight) this.y = mapHeight - this.canvasHeight;
     }
 
     apply(ctx) {

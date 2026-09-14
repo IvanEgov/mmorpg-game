@@ -44,27 +44,20 @@
     }
 
     spawnTreasures() {
-        // 5 сундуков с сокровищами
-        for (let i = 0; i < 5; i++) {
+        const rng = new SeededRandom(this.dungeonId + '_treasures');
+
+        // 10 сундуков на большой карте
+        for (let i = 0; i < 10; i++) {
             let x, y, attempts = 0;
             do {
-                x = Math.floor(Math.random() * (this.mapWidth - 4) + 2);
-                y = Math.floor(Math.random() * (this.mapHeight - 4) + 2);
+                const tileX = rng.nextInt(5, this.mapWidth - 5);
+                const tileY = rng.nextInt(5, this.mapHeight - 5);
+                x = tileX * CONSTANTS.TILE_SIZE;
+                y = tileY * CONSTANTS.TILE_SIZE;
                 attempts++;
-            } while (this.map[y][x] !== 6 && attempts < 50);
+            } while (!this.isWalkable(x, y) && attempts < 50);
 
-            // Создаём сундук (можно добавить класс TreasureChest)
-            this.entities.push({
-                x: x * CONSTANTS.TILE_SIZE,
-                y: y * CONSTANTS.TILE_SIZE,
-                type: 'treasure',
-                render: function (ctx) {
-                    ctx.font = '24px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('📦', this.x + 16, this.y + 16);
-                }
-            });
+            this.entities.push(new TreasureChest(x, y));
         }
     }
 

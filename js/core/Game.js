@@ -10,7 +10,35 @@ class Game {
             const data = JSON.parse(savedData);
             this.player = new Player(data.player.x, data.player.y);
             this.player.loadFromJSON(data.player);
+
+            // 🆕 ИСПРАВЛЕНИЕ: Проверяем локацию и координаты
             this.currentLocationId = data.currentLocationId || 'city';
+
+            // Если игрок был не в городе, пересоздаём локацию
+            if (this.currentLocationId !== 'city') {
+                console.log(`🔄 Восстанавливаем локацию: ${this.currentLocationId}`);
+                if (this.currentLocationId.startsWith('epoch_')) {
+                    const epochId = this.currentLocationId.replace('epoch_', '');
+                    if (epochId === 'ancient_ruins') {
+                        this.locations[this.currentLocationId] = new AncientRuinsLocation();
+                    } else {
+                        this.locations[this.currentLocationId] = new DungeonLocation('dungeon_1');
+                    }
+                } else {
+                    this.locations[this.currentLocationId] = new DungeonLocation(this.currentLocationId);
+                }
+
+                // Проверяем, что координаты в пределах карты
+                const location = this.locations[this.currentLocationId];
+                const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
+                const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
+
+                if (this.player.x >= mapW || this.player.y >= mapH || this.player.x < 0 || this.player.y < 0) {
+                    console.log('⚠️ Координаты вне карты, перемещаем в безопасную зону');
+                    this.player.x = 3 * CONSTANTS.TILE_SIZE;
+                    this.player.y = 3 * CONSTANTS.TILE_SIZE;
+                }
+            }
         } else {
             console.log('🆕 Новая игра');
             this.player = new Player(15 * CONSTANTS.TILE_SIZE, 10 * CONSTANTS.TILE_SIZE);
@@ -23,10 +51,7 @@ class Game {
         this.ui = new UIManager(this.player);
         this.network = new NetworkManager(this);
 
-        // Камера (следует за игроком)
         this.camera = new Camera(this.canvas.width, this.canvas.height);
-
-        // Волновой менеджер (для арены выживания)
         this.waveManager = new WaveManager(null);
 
         this.keys = {};
@@ -37,8 +62,10 @@ class Game {
         this.damageNumbers = [];
         this.isPaused = false;
 
-        this.locations = { 'city': new CityLocation() };
-        this.currentLocation = this.locations[this.currentLocationId] || this.locations['city'];
+        if (!this.locations['city']) {
+            this.locations['city'] = new CityLocation();
+        }
+        this.currentLocation = this.locations[this.currentLocationId];
         this.otherPlayers = {};
 
         window.gameInstance = this;
@@ -46,7 +73,6 @@ class Game {
         this.setupJoystick();
         this.ui.updateHUD();
 
-        // Если вошли сразу на арену — запускаем волны
         if (this.currentLocationId === 'arena_survival') {
             this.startArena();
         }
@@ -114,6 +140,7 @@ class Game {
             this.locations['city'] = new CityLocation();
         }
 
+
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId];
 
@@ -136,7 +163,12 @@ class Game {
                 this.removeKilledEnemies(killedIds);
             });
         }
-
+        // 🆕 Загружаем список открытых сундуков
+        if (locationId !== 'city') {
+            this.network.getOpenedChests(locationId, (openedIds) => {
+                this.markOpenedChests(openedIds);
+            });
+        }
         if (locationId === 'arena_survival') {
             this.startArena();
         }
@@ -578,5 +610,18 @@ class Game {
 
     start() {
         requestAnimationFrame((t) => this.loop(t));
+    }
+    markOpenedChests(openedIds) {
+        if (!openedIds || openedIds.length === 0) return;
+
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof TreasureChest) {
+                if (openedIds.includes(entity.uniqueId)) {
+                    entity.isOpen = true;
+                }
+            }
+        }
+
+        console.log(`📦 Отмечено ${openedIds.length} открытых сундуков`);
     }
 }

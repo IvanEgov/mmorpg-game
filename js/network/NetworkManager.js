@@ -157,4 +157,27 @@
         const el = document.getElementById('online-count');
         if (el) el.textContent = count;
     }
+    // 🆕 Сообщить всем, что сундук открыт
+    reportChestOpened(chestId, locationId) {
+        if (!this.connected) return;
+        const key = locationId + '/' + chestId;
+        this.db.ref('opened_chests/' + key).set({
+            openedBy: this.playerName,
+            timestamp: Date.now()
+        });
+        console.log(`📦 Сундук ${chestId} открыт, синхронизируем...`);
+    }
+
+    // 🆕 Получить список открытых сундуков
+    getOpenedChests(locationId, callback) {
+        if (!this.connected) {
+            callback([]);
+            return;
+        }
+        this.db.ref('opened_chests/' + locationId).once('value', (snapshot) => {
+            const data = snapshot.val();
+            const openedIds = data ? Object.keys(data) : [];
+            callback(openedIds);
+        });
+    }
 }

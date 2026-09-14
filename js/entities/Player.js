@@ -172,25 +172,28 @@ class Player {
             this.skillPoints -= skill.costPerLevel;
         }
     }
-
     move(dx, dy, map) {
-        // 🆕 ИСПРАВЛЕНО: Определяем направление по большей оси
-        if (Math.abs(dx) > Math.abs(dy)) {
-            // Горизонтальное движение преобладает
-            if (dx > 0) this.direction = 'right';
-            else if (dx < 0) this.direction = 'left';
-        } else {
-            // Вертикальное движение преобладает
-            if (dy > 0) this.direction = 'down';
-            else if (dy < 0) this.direction = 'up';
-        }
+        if (dx > 0) this.direction = 'right';
+        if (dx < 0) this.direction = 'left';
+        if (dy > 0) this.direction = 'down';
+        if (dy < 0) this.direction = 'up';
 
-        const newX = this.x + dx * this.speed;
-        const newY = this.y + dy * this.speed;
+        let newX = this.x + dx * this.speed;
+        let newY = this.y + dy * this.speed;
+
+        // 🆕 Wrap-around: бесконечная карта
+        const mapW = (window.gameInstance?.currentLocation?.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
+        const mapH = (window.gameInstance?.currentLocation?.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
+
+        if (newX < 0) newX = mapW - CONSTANTS.TILE_SIZE;
+        if (newX >= mapW) newX = 0;
+        if (newY < 0) newY = mapH - CONSTANTS.TILE_SIZE;
+        if (newY >= mapH) newY = 0;
+
         const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
         const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
-        if (tileX >= 0 && tileX < CONSTANTS.MAP_WIDTH && tileY >= 0 && tileY < CONSTANTS.MAP_HEIGHT) {
+        if (tileX >= 0 && tileX < mapW / CONSTANTS.TILE_SIZE && tileY >= 0 && tileY < mapH / CONSTANTS.TILE_SIZE) {
             if (map[tileY] && map[tileY][tileX] !== 1 && map[tileY][tileX] !== 7) {
                 this.x = newX;
                 this.y = newY;
@@ -289,7 +292,7 @@ class Player {
     }
     tryInteract(location, game) {
         for (const entity of location.entities) {
-            if (entity instanceof NPC || entity instanceof Portal) {
+            if (entity instanceof NPC || entity instanceof Portal || entity instanceof TreasureChest) {
                 const dx = entity.x - this.x;
                 const dy = entity.y - this.y;
                 const distance = Math.hypot(dx, dy);

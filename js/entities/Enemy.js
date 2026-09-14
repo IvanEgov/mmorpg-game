@@ -55,8 +55,18 @@ class Enemy {
         if (distance < this.detectionRange && distance > this.minDistance) {
             const moveX = (dx / distance) * this.speed;
             const moveY = (dy / distance) * this.speed;
-            const newX = this.x + moveX;
-            const newY = this.y + moveY;
+            let newX = this.x + moveX;
+            let newY = this.y + moveY;
+
+            // 🆕 Wrap-around для врагов
+            const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
+            const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
+
+            if (newX < 0) newX = mapW - CONSTANTS.TILE_SIZE;
+            if (newX >= mapW) newX = 0;
+            if (newY < 0) newY = mapH - CONSTANTS.TILE_SIZE;
+            if (newY >= mapH) newY = 0;
+
             const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
             const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
