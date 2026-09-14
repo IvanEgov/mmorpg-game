@@ -124,10 +124,10 @@ class Game {
        //     this.network.cleanupOpenedChests(this.currentLocationId);
        // }
 
-     //   if (locationId !== 'city') {
-       //     delete this.locations[locationId];
-       //     this.createLocation(locationId);
-      //  }
+        if (locationId !== 'city') {
+            delete this.locations[locationId];
+            this.createLocation(locationId);
+        }
 
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId] || this.locations['city'];
