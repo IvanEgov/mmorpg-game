@@ -102,4 +102,26 @@ const CONSTANTS = {
         BAT_BASE_ATK: 8,
         BAT_BASE_SPEED: 2.0
     }
+        BOSSES: {
+        'ruins_guardian': {
+            id: 'ruins_guardian',
+            name: 'Хранитель Руин',
+            icon: '👹',
+            type: 'boss',
+            hp: 500,
+            atk: 20,
+            speed: 1.3,
+            xpReward: 500,
+            goldReward: 300,
+            size: 2,
+            lootTable: [
+                { itemId: 'potion_hp', chance: 1.0, count: 5 },
+                { itemId: 'sword_steel', chance: 0.5, count: 1 },
+                { itemId: 'ring_power', chance: 0.3, count: 1 }
+            ],
+            unlocksEpoch: 'blood_arena',
+            color: '#8b0000',
+            enragedColor: '#ff0000'
+        }
+    }
 };

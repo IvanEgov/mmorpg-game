@@ -78,8 +78,12 @@ class Player {
     }
 
     completeEpoch(epochId) {
+        if (!this.completedEpochs) this.completedEpochs = [];
+        if (!this.artifacts) this.artifacts = [];
+
         if (!this.completedEpochs.includes(epochId)) {
             this.completedEpochs.push(epochId);
+            console.log('✅ Эпоха ' + epochId + ' завершена!');
 
             // Разблокируем следующую эпоху
             const epoch = EPOCHS[epochId];
@@ -87,14 +91,13 @@ class Player {
                 const nextEpoch = EPOCHS[epoch.rewards.nextEpoch];
                 if (nextEpoch) {
                     nextEpoch.unlocked = true;
-                    console.log(`🔓 Разблокирована эпоха: ${nextEpoch.name}`);
+                    console.log('🔓 Разблокирована эпоха: ' + nextEpoch.name);
                 }
             }
 
-            // Получаем артефакт
             if (epoch && epoch.rewards && epoch.rewards.artifact) {
                 this.artifacts.push(epoch.rewards.artifact);
-                console.log(`🎁 Получен артефакт: ${epoch.rewards.artifact}`);
+                console.log('🎁 Получен артефакт: ' + epoch.rewards.artifact);
             }
         }
     }

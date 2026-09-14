@@ -4,6 +4,7 @@
         this.name = '🏛️ Древние руины';
         this.generateMap();
         this.spawnTreasures();
+        this.spawnBoss();  // 🆕
         this.spawnTraps();
         this.spawnExitPortal();
     }
@@ -46,7 +47,6 @@
     spawnTreasures() {
         const rng = new SeededRandom(this.dungeonId + '_treasures');
 
-        // 10 сундуков на большой карте
         for (let i = 0; i < 10; i++) {
             let x, y, attempts = 0;
             do {
@@ -55,10 +55,41 @@
                 x = tileX * CONSTANTS.TILE_SIZE;
                 y = tileY * CONSTANTS.TILE_SIZE;
                 attempts++;
+
+                // 🆕 Не спавним сундуки в центре (там босс)
+                const centerTileX = Math.floor(this.mapWidth / 2);
+                const centerTileY = Math.floor(this.mapHeight / 2);
+                if (Math.abs(tileX - centerTileX) < 8 && Math.abs(tileY - centerTileY) < 8) {
+                    continue;
+                }
             } while (!this.isWalkable(x, y) && attempts < 50);
 
             this.entities.push(new TreasureChest(x, y));
         }
+    }
+
+    // 🆕 Спавн босса в центре карты
+    spawnBoss() {
+        const bossData = CONSTANTS.BOSSES['ruins_guardian'];
+        const centerX = Math.floor(this.mapWidth / 2) * CONSTANTS.TILE_SIZE;
+        const centerY = Math.floor(this.mapHeight / 2) * CONSTANTS.TILE_SIZE;
+
+        // Очищаем область вокруг босса
+        const bossTileX = Math.floor(this.mapWidth / 2);
+        const bossTileY = Math.floor(this.mapHeight / 2);
+        for (let y = bossTileY - 4; y <= bossTileY + 4; y++) {
+            for (let x = bossTileX - 4; x <= bossTileX + 4; x++) {
+                if (x > 0 && y > 0 && x < this.mapWidth - 1 && y < this.mapHeight - 1) {
+                    this.map[y][x] = 6;
+                }
+            }
+        }
+
+        const boss = new Boss(centerX, centerY, bossData);
+        this.entities.push(boss);
+        this.boss = boss;
+
+        console.log('👹 Босс "' + bossData.name + '" появился в центре карты!');
     }
 
     spawnTraps() {

@@ -324,6 +324,10 @@ class Game {
                 this.player.gold += result.enemy.goldReward;
                 this.network.reportEnemyKilled(result.enemy.uniqueId, this.currentLocationId);
 
+                // 🆕 Если убит босс — разблокируем следующую эпоху
+                if (result.enemy instanceof Boss && result.enemy.unlocksEpoch) {
+                    this.handleBossDefeat(result.enemy);
+                }
                 const loot = result.enemy.getLoot();
                 loot.forEach(itemId => {
                     this.player.addItem(itemId);
@@ -345,7 +349,60 @@ class Game {
             }
         }
     }
+    handleBossDefeat(boss) {
+        console.log('🏆 Босс ' + boss.name + ' повержен!');
 
+        // Разблокируем следующую эпоху
+        if (this.player.completeEpoch) {
+            const currentEpochId = this.currentLocationId.replace('epoch_', '');
+            this.player.completeEpoch(currentEpochId);
+        }
+
+        // Показываем сообщение
+        this.showBossDefeatMessage(boss);
+
+        // Создаём портал в новую эпоху
+        const portalX = boss.x;
+        const portalY = boss.y;
+        const newPortal = new Portal(
+            portalX, portalY,
+            'epoch_' + boss.unlocksEpoch,
+            '✨ Портал в ' + (EPOCHS[boss.unlocksEpoch]?.name || 'новую эпоху')
+        );
+        this.currentLocation.entities.push(newPortal);
+
+        this.saveGame();
+    }
+
+    showBossDefeatMessage(boss) {
+        const msg = document.createElement('div');
+        msg.style.cssText = `
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a0000, #3a0000);
+            border: 3px solid #f1c40f;
+            padding: 30px; border-radius: 12px;
+            color: #fff; text-align: center;
+            z-index: 9999; font-size: 18px;
+            box-shadow: 0 0 50px rgba(241, 196, 15, 0.5);
+            animation: fadeIn 0.5s;
+        `;
+        msg.innerHTML = `
+            <h1 style="color: #f1c40f; margin-bottom: 15px;">🏆 ПОБЕДА!</h1>
+            <p style="margin-bottom: 10px;">Босс <b>${boss.name}</b> повержен!</p>
+            <p style="color: #2ecc71;">✨ Разблокирована новая эпоха!</p>
+            <p style="color: #aaa; font-size: 14px; margin-top: 15px;">
+                Портал появился на месте босса
+            </p>
+        `;
+        document.body.appendChild(msg);
+
+        setTimeout(() => {
+            msg.style.transition = 'opacity 0.5s';
+            msg.style.opacity = '0';
+            setTimeout(() => msg.remove(), 500);
+        }, 3000);
+    }
     addDamageNumber(x, y, value, color) {
         this.damageNumbers.push({
             x: x + CONSTANTS.TILE_SIZE / 2 + (Math.random() - 0.5) * 20,
@@ -377,11 +434,16 @@ class Game {
 
     markOpenedChests(openedIds) {
         if (!openedIds || openedIds.length === 0) return;
-        for (const entity of this.currentLocation.entities) {
+
+        // 🆕 Удаляем открытые сундуки из локации
+        this.currentLocation.entities = this.currentLocation.entities.filter(entity => {
             if (entity instanceof TreasureChest && openedIds.includes(entity.uniqueId)) {
-                entity.isOpen = true;
+                return false; // Удаляем сундук
             }
-        }
+            return true;
+        });
+
+        console.log(`📦 Удалено ${openedIds.length} открытых сундуков`);
     }
 
     update(deltaTime) {
@@ -458,13 +520,61 @@ class Game {
 
         this.playerRenderer.render(this.ctx, this.player);
         this.renderDamageNumbers();
+        // 🆕 HUD босса (рисуется поверх камеры)
+        if (this.currentLocation.boss && !this.currentLocation.boss.isDead) {
+            this.renderBossHUD(this.currentLocation.boss);
+        }
         this.camera.restore(this.ctx);
 
         if (this.currentLocationId === 'arena_survival' && this.waveManager.active) {
             this.renderArenaHUD();
         }
     }
+    renderBossHUD(boss) {
+        const ctx = this.ctx;
+        ctx.save();
 
+        const barWidth = 400;
+        const barHeight = 25;
+        const x = (this.canvas.width - barWidth) / 2;
+        const y = 50;
+
+        // Фон
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(x - 10, y - 30, barWidth + 20, 70);
+        ctx.strokeStyle = boss.isEnraged ? '#ff0000' : '#8b0000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - 10, y - 30, barWidth + 20, 70);
+
+        // Имя босса
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = boss.isEnraged ? '#ff0000' : '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(boss.icon + ' ' + boss.name + (boss.isEnraged ? ' 💢' : ''), x + barWidth / 2, y - 25);
+
+        // Полоска HP
+        ctx.fillStyle = '#500';
+        ctx.fillRect(x, y, barWidth, barHeight);
+
+        const hpPercent = Math.max(0, boss.hp / boss.maxHp);
+        const gradient = ctx.createLinearGradient(x, y, x + barWidth * hpPercent, y);
+        gradient.addColorStop(0, boss.isEnraged ? '#ff0000' : '#8b0000');
+        gradient.addColorStop(1, boss.isEnraged ? '#ff6666' : '#c0392b');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth * hpPercent, barHeight);
+
+        // Текст HP
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        const hpText = Math.floor(boss.hp) + ' / ' + boss.maxHp;
+        ctx.strokeText(hpText, x + barWidth / 2, y + 5);
+        ctx.fillText(hpText, x + barWidth / 2, y + 5);
+
+        ctx.restore();
+    }
     renderDamageNumbers() {
         for (const num of this.damageNumbers) {
             const t = num.timer / num.maxTimer;
