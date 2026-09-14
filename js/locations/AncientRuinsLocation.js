@@ -12,8 +12,8 @@
 
     // 🆕 Спавн слаймов для квеста
     spawnSlimes() {
-        // 🆕 Используем фиксированный seed для одинакового спавна у всех
-        const rng = new SeededRandom('ancient_ruins_slimes_fixed');
+        // 🆕 ФИКСИРОВАННЫЙ seed для одинакового спавна у всех игроков
+        const rng = new SeededRandom('ancient_ruins_slimes_v1');
         const slimeCount = 15;
         let spawned = 0;
 
@@ -41,7 +41,9 @@
             } while (!valid && attempts < 100);
 
             if (valid) {
-                this.entities.push(new Enemy(x, y, 'slime'));
+                const enemy = new Enemy(x, y, 'slime');
+                console.log('🟢 Слайм заспавнен: ' + enemy.uniqueId + ' на ' + x + ',' + y);
+                this.entities.push(enemy);
                 spawned++;
             }
         }

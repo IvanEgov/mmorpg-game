@@ -146,21 +146,38 @@
         this.db.ref('players/' + this.playerId).update(data);
     }
     // 🆕 Подписка на обновления локации в реальном времени
+    s    // 🆕 Подписка на обновления локации в реальном времени
     subscribeToLocationUpdates(locationId, callback) {
-        if (!this.connected) return;
+        if (!this.connected) {
+            console.log('⚠️ Не подключён к Firebase, синхронизация отключена');
+            return;
+        }
+
+        console.log('📡 Подписываемся на обновления локации: ' + locationId);
+
+        // Очищаем старые подписки
+        if (this.locationListeners) {
+            this.db.ref('killed_enemies/' + this.currentLocationId).off();
+            this.db.ref('opened_chests/' + this.currentLocationId).off();
+        }
+
+        this.currentLocationId = locationId;
+        this.locationListeners = true;
 
         // Подписываемся на убитых мобов
         this.db.ref('killed_enemies/' + locationId).on('value', (snapshot) => {
             const data = snapshot.val();
             const killedIds = data ? Object.keys(data) : [];
-            callback({ killedEnemies: killedIds });
+            console.log('💀 Получено обновление убитых мобов: ' + killedIds.length);
+            callback({ type: 'killedEnemies', ids: killedIds });
         });
 
         // Подписываемся на открытые сундуки
         this.db.ref('opened_chests/' + locationId).on('value', (snapshot) => {
             const data = snapshot.val();
             const openedIds = data ? Object.keys(data) : [];
-            callback({ openedChests: openedIds });
+            console.log('📦 Получено обновление открытых сундуков: ' + openedIds.length);
+            callback({ type: 'openedChests', ids: openedIds });
         });
     }
     disconnect() {

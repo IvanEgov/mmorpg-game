@@ -169,18 +169,17 @@ class Game {
         this.saveGame();
     }
 
+    
     // 🆕 Применяем обновления из Firebase
     applyLocationUpdates(updates) {
         if (!updates) return;
 
-        // Удаляем убитых мобов
-        if (updates.killedEnemies) {
-            this.removeKilledEnemies(updates.killedEnemies);
-        }
+        console.log('🔄 Применяем обновление: ' + updates.type);
 
-        // Помечаем открытые сундуки
-        if (updates.openedChests) {
-            this.markOpenedChests(updates.openedChests);
+        if (updates.type === 'killedEnemies') {
+            this.removeKilledEnemies(updates.ids);
+        } else if (updates.type === 'openedChests') {
+            this.markOpenedChests(updates.ids);
         }
     }
 
@@ -449,25 +448,39 @@ class Game {
 
     removeKilledEnemies(killedIds) {
         if (!killedIds || killedIds.length === 0) return;
+
+        const beforeCount = this.currentLocation.entities.length;
+
         this.currentLocation.entities = this.currentLocation.entities.filter(entity => {
-            if (entity instanceof Enemy && killedIds.includes(entity.uniqueId)) return false;
+            if (entity instanceof Enemy && killedIds.includes(entity.uniqueId)) {
+                console.log('🗑️ Удаляем убитого моба: ' + entity.uniqueId);
+                return false;
+            }
             return true;
         });
+
+        const removedCount = beforeCount - this.currentLocation.entities.length;
+        console.log('🗑️ Удалено ' + removedCount + ' убитых мобов из ' + killedIds.length);
     }
 
     markOpenedChests(openedIds) {
         if (!openedIds || openedIds.length === 0) return;
 
-        // 🆕 Помечаем сундуки как открытые, но НЕ удаляем
+        let markedCount = 0;
+
         for (const entity of this.currentLocation.entities) {
             if (entity instanceof TreasureChest) {
                 if (openedIds.includes(entity.uniqueId)) {
-                    entity.isOpen = true; // Просто помечаем как открытый
+                    if (!entity.isOpen) {
+                        entity.isOpen = true;
+                        markedCount++;
+                        console.log('📦 Помечаем сундук как открытый: ' + entity.uniqueId);
+                    }
                 }
             }
         }
 
-        console.log('📦 Помечено ' + openedIds.length + ' открытых сундуков');
+        console.log('📦 Помечено ' + markedCount + ' открытых сундуков из ' + openedIds.length);
     }
 
     update(deltaTime) {
