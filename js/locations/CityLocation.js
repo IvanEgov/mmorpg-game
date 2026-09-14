@@ -69,14 +69,14 @@
             '💀 Арена выживания (волны мобов)'
         ));
     
-
-        // Портал в средневековье (требует арены)
+        // 🆕 Третий портал — крепость
         this.entities.push(new Portal(
             (CONSTANTS.MAP_WIDTH - 3) * CONSTANTS.TILE_SIZE,
             Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,
-            'epoch_medieval',
-            '🏰 Средневековье (3-е воплощение)'
+            'castle',
+            '🏰 Крепость (стратегия)'
         ));
+       
 
         // Портал в магические земли
         this.entities.push(new Portal(

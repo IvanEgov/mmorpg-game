@@ -88,16 +88,13 @@ class Game {
     createLocation(locationId) {
         if (this.locations[locationId]) return;
 
-        // 🆕 Подземелье с боссом
         if (locationId === 'epoch_dungeon') {
             this.locations[locationId] = new AncientRuinsLocation();
-        }
-        // 🆕 Арена выживания
-        else if (locationId === 'arena_survival') {
+        } else if (locationId === 'arena_survival') {
             this.locations[locationId] = new DungeonLocation('arena_survival');
-        }
-        // Обычные данжи
-        else if (locationId.startsWith('dungeon_')) {
+        } else if (locationId === 'castle') {
+            this.locations[locationId] = new CastleLocation();
+        } else if (locationId.startsWith('dungeon_')) {
             this.locations[locationId] = new DungeonLocation(locationId);
         }
     }

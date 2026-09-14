@@ -102,7 +102,8 @@ const CONSTANTS = {
         BAT_BASE_ATK: 8,
         BAT_BASE_SPEED: 2.0
     },
-        BOSSES: {
+
+    BOSSES: {
         'ruins_guardian': {
             id: 'ruins_guardian',
             name: 'Хранитель Руин',
@@ -122,6 +123,34 @@ const CONSTANTS = {
             unlocksEpoch: 'blood_arena',
             color: '#8b0000',
             enragedColor: '#ff0000'
+        }
+    },
+    RESOURCES: {
+        'wood': { id: 'wood', name: 'Дерево', icon: '🪵', price: 10 },
+        'stone': { id: 'stone', name: 'Камень', icon: '🪨', price: 15 },
+        'iron': { id: 'iron', name: 'Железо', icon: '⚙️', price: 25 }
+    },
+
+    TOWERS: {
+        'arrow_tower': {
+            id: 'arrow_tower',
+            name: 'Стрелковая башня',
+            icon: '🏹',
+            cost: { wood: 50, stone: 30 },
+            damage: 15,
+            range: 150,
+            attackSpeed: 1000, // мс между выстрелами
+            color: '#8B4513'
+        },
+        'cannon_tower': {
+            id: 'cannon_tower',
+            name: 'Пушечная башня',
+            icon: '💣',
+            cost: { wood: 30, stone: 80, iron: 20 },
+            damage: 40,
+            range: 200,
+            attackSpeed: 2000,
+            color: '#696969'
         }
     }
 };
