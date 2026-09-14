@@ -114,7 +114,6 @@
         }
     }
 
-    // 🆕 Спавн босса в центре карты
     spawnBoss() {
         const bossData = CONSTANTS.BOSSES['ruins_guardian'];
         const centerX = Math.floor(this.mapWidth / 2) * CONSTANTS.TILE_SIZE;
@@ -132,10 +131,12 @@
         }
 
         const boss = new Boss(centerX, centerY, bossData);
+        // 🆕 Уникальный ID босса (одинаковый у всех игроков)
+        boss.uniqueId = 'boss_ruins_guardian';
         this.entities.push(boss);
         this.boss = boss;
 
-        console.log('👹 Босс "' + bossData.name + '" появился в центре карты!');
+        console.log('👹 Босс "' + bossData.name + '" заспавнен: ' + boss.uniqueId);
     }
 
     spawnTraps() {

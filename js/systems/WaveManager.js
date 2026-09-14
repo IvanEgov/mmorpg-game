@@ -42,13 +42,14 @@ class WaveManager {
         const levelTier = Math.floor(this.playerLevel / CONSTANTS.ARENA.LEVEL_SCALE_INTERVAL);
         const powerMultiplier = Math.pow(CONSTANTS.ARENA.LEVEL_SCALE_POWER, levelTier);
 
-        console.log(`🌊 Волна ${this.wave}! Спавним ${mobCount} мобов. Сила: x${powerMultiplier.toFixed(2)}`);
+        console.log('🌊 Волна ' + this.wave + '! Спавним ' + mobCount + ' мобов. Сила: x' + powerMultiplier.toFixed(2));
 
         const mapW = this.location.mapWidth || CONSTANTS.ARENA.MAP_WIDTH;
         const mapH = this.location.mapHeight || CONSTANTS.ARENA.MAP_HEIGHT;
 
-        // 🆕 Используем seeded random на основе ID локации и номера волны
-        const rng = new SeededRandom(this.location.dungeonId + '_wave_' + this.wave);
+        // 🆕 ФИКСИРОВАННЫЙ seed для каждой волны (одинаковый у всех игроков)
+        const waveSeed = 'arena_wave_' + this.wave + '_v1';
+        const rng = new SeededRandom(waveSeed);
 
         for (let i = 0; i < mobCount; i++) {
             let x, y;
@@ -70,7 +71,6 @@ class WaveManager {
                         y - (this.location.spawnY || 3 * CONSTANTS.TILE_SIZE)
                     );
 
-                    // 🆕 Мобы спавнятся минимум в 200 пикселях от игрока
                     if (distFromSpawn > 200) {
                         validSpawn = true;
                     }
@@ -93,8 +93,18 @@ class WaveManager {
 
             if (validSpawn) {
                 const bat = new ArenaBat(x, y, powerMultiplier, this.wave);
+                // 🆕 Уникальный ID моба (одинаковый у всех игроков)
+                bat.uniqueId = 'arena_mob_w' + this.wave + '_' + i;
                 this.location.entities.push(bat);
+                console.log('🦇 Моб волны ' + this.wave + ' заспавнен: ' + bat.uniqueId);
             }
+        }
+        // 🆕 Отправляем номер волны в Firebase
+        if (window.gameInstance && window.gameInstance.network) {
+            window.gameInstance.network.reportArenaWave(
+                window.gameInstance.currentLocationId,
+                this.wave
+            );
         }
     }
 }

@@ -219,4 +219,39 @@
         if (!this.connected) return;
         this.db.ref('opened_chests/' + locationId).remove();
     }
+    // 🆕 Подписка на волны арены
+    subscribeToArenaWaves(locationId, callback) {
+        if (!this.connected) return;
+
+        console.log('📡 Подписываемся на волны арены: ' + locationId);
+
+        // Подписываемся на номер текущей волны
+        this.db.ref('arena_waves/' + locationId + '/currentWave').on('value', (snapshot) => {
+            const currentWave = snapshot.val();
+            if (currentWave) {
+                callback({ currentWave: currentWave });
+            }
+        });
+
+        // Подписываемся на убитых мобов арены
+        this.db.ref('killed_enemies/' + locationId).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const killedIds = data ? Object.keys(data) : [];
+            callback({ killedMobs: killedIds });
+        });
+    }
+
+    // 🆕 Отправить номер волны в Firebase
+    reportArenaWave(locationId, waveNumber) {
+        if (!this.connected) return;
+
+        // Проверяем, не отправлял ли уже кто-то эту волну
+        this.db.ref('arena_waves/' + locationId + '/currentWave').once('value', (snapshot) => {
+            const existingWave = snapshot.val();
+            if (!existingWave || waveNumber > existingWave) {
+                this.db.ref('arena_waves/' + locationId + '/currentWave').set(waveNumber);
+                console.log('🌊 Отправлена волна ' + waveNumber + ' в Firebase');
+            }
+        });
+    }
 }

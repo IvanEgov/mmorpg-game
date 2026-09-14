@@ -28,13 +28,16 @@
         this.mapWidth = mapW;
         this.mapHeight = mapH;
 
+        // 🆕 ФИКСИРОВАННЫЙ seed для карты арены
+        const mapRng = isArena ? new SeededRandom('arena_survival_map_v1') : null;
+
         for (let y = 0; y < mapH; y++) {
             this.map[y] = [];
             for (let x = 0; x < mapW; x++) {
                 if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
                     this.map[y][x] = 7;
-                } else if (isArena && Math.random() < 0.02 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
-                    this.map[y][x] = 7;
+                } else if (isArena && mapRng.next() < 0.02 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
+                    this.map[y][x] = 7; // 🆕 Детерминированные препятствия
                 } else if (!isArena && ((x === 8 || x === 22) && (y === 5 || y === 15))) {
                     this.map[y][x] = 7;
                 } else {
@@ -53,8 +56,9 @@
                 }
             }
         }
-    }
 
+        console.log('✅ Карта ' + (isArena ? 'арены' : 'данжа') + ' ' + mapW + 'x' + mapH + ' создана (детерминированно)');
+    }
   
 
     // Переопределяем isWalkable для больших карт

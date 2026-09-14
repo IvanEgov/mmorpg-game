@@ -187,6 +187,33 @@ class Game {
         console.log('💀 Арена выживания запущена!');
         this.waveManager = new WaveManager(this.currentLocation);
         this.waveManager.start(this.player.level);
+
+        // 🆕 Подписываемся на обновления волн
+        if (this.network.connected) {
+            this.network.subscribeToArenaWaves(this.currentLocationId, (waveData) => {
+                this.syncArenaWaves(waveData);
+            });
+        }
+    }
+
+    // 🆕 Синхронизация волн арены
+    syncArenaWaves(waveData) {
+        if (!waveData) return;
+
+        console.log('🔄 Синхронизация волн арены:', waveData);
+
+        // Если пришла новая волна от другого игрока
+        if (waveData.currentWave && waveData.currentWave > this.waveManager.wave) {
+            console.log('🌊 Получена волна ' + waveData.currentWave + ' от другого игрока');
+            // Синхронизируем номер волны
+            this.waveManager.wave = waveData.currentWave - 1;
+            this.waveManager.spawnWave();
+        }
+
+        // Синхронизируем убитых мобов
+        if (waveData.killedMobs) {
+            this.removeKilledEnemies(waveData.killedMobs);
+        }
     }
 
     handlePlayerDeath() {
