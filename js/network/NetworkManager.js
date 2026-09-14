@@ -293,4 +293,39 @@
         if (!this.connected) return;
         this.db.ref('boss_state/' + locationId).remove();
     }
+    // 🆕 Игрок заходит в локацию
+    joinLocation(locationId) {
+        if (!this.connected || locationId === 'city') return;
+        console.log('👤 Игрок зашел в локацию: ' + locationId);
+        this.db.ref('active_players/' + locationId + '/' + this.playerId).set(true);
+    }
+
+    // 🆕 Игрок выходит из локации
+    leaveLocation(locationId) {
+        if (!this.connected || locationId === 'city') return;
+        console.log('👤 Игрок вышел из локации: ' + locationId);
+
+        const playerRef = this.db.ref('active_players/' + locationId + '/' + this.playerId);
+        playerRef.remove();
+
+        // Проверяем, остался ли кто-то в локации
+        this.db.ref('active_players/' + locationId).once('value', (snapshot) => {
+            const playersLeft = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+
+            if (playersLeft === 0) {
+                console.log('🔄 Локация ' + locationId + ' пуста! Сбрасываем состояние (респаун мобов, сундуков, босса)...');
+                this.resetLocation(locationId);
+            }
+        });
+    }
+
+    // 🆕 Полная очистка "мусора" локации
+    resetLocation(locationId) {
+        const updates = {};
+        updates['killed_enemies/' + locationId] = null;
+        updates['opened_chests/' + locationId] = null;
+        updates['boss_state/' + locationId] = null; // Сбрасываем и босса, чтобы он возродился полным
+
+        this.db.ref().update(updates);
+    }
 }

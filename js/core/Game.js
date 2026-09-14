@@ -114,16 +114,16 @@ class Game {
     changeLocation(locationId) {
         console.log('🌀 Переход в: ' + locationId);
 
+        // 1. Если уходим из старой локации (не города), сообщаем об этом сети
+        if (this.currentLocationId && this.currentLocationId !== 'city' && this.currentLocationId !== locationId) {
+            this.network.leaveLocation(this.currentLocationId);
+        }
+
         if (this.currentLocationId === 'arena_survival' && locationId !== 'arena_survival') {
             this.waveManager.stop();
         }
-        // 🆕 НЕ удаляем данные об убитых мобах и сундуках при выходе
-        // Они должны сохраняться, чтобы другие игроки видели обновления
-      //  if (this.currentLocationId && this.currentLocationId !== locationId) {
-       //     this.network.cleanupKilledEnemies(this.currentLocationId);
-       //     this.network.cleanupOpenedChests(this.currentLocationId);
-       // }
 
+        // 2. Пересоздаем локацию
         if (locationId !== 'city') {
             delete this.locations[locationId];
             this.createLocation(locationId);
@@ -132,6 +132,12 @@ class Game {
         this.currentLocationId = locationId;
         this.currentLocation = this.locations[locationId] || this.locations['city'];
 
+        // 3. Если заходим в новую локацию (не город), сообщаем об этом сети
+        if (locationId !== 'city') {
+            this.network.joinLocation(locationId);
+        }
+
+        // Позиция игрока
         if (locationId === 'city') {
             this.player.x = 15 * CONSTANTS.TILE_SIZE;
             this.player.y = 10 * CONSTANTS.TILE_SIZE;
@@ -145,30 +151,24 @@ class Game {
 
         document.getElementById('location-name').textContent = this.currentLocation.name;
 
-        // 🆕 Загружаем данные синхронизации для всех локаций кроме города
-        // 🆕 Загружаем данные синхронизации для всех локаций кроме города
+        // 4. Загружаем данные синхронизации (теперь они будут пустыми, если локация сбросилась)
         if (locationId !== 'city') {
-            // 🆕 1. Подписываемся на состояние босса в реальном времени
             this.network.subscribeToBossState(locationId, (bossData) => {
                 this.syncBossState(bossData);
             });
 
-            // 2. Загружаем убитых мобов
             this.network.getKilledEnemies(locationId, (killedIds) => {
                 this.removeKilledEnemies(killedIds);
             });
 
-            // 3. Загружаем открытые сундуки
             this.network.getOpenedChests(locationId, (openedIds) => {
                 this.markOpenedChests(openedIds);
             });
 
-            // 4. Подписываемся на общие обновления
             this.network.subscribeToLocationUpdates(locationId, (updates) => {
                 this.applyLocationUpdates(updates);
             });
         }
-
 
         if (locationId === 'arena_survival') {
             this.startArena();
@@ -255,6 +255,11 @@ class Game {
 
         const goldLoss = Math.floor(this.player.gold * 0.2);
         this.player.gold = Math.max(0, this.player.gold - goldLoss);
+
+        // 🆕 Сообщаем, что вышли из текущей локации (возможно, она теперь пуста)
+        if (this.currentLocationId !== 'city') {
+            this.network.leaveLocation(this.currentLocationId);
+        }
 
         this.changeLocation('city');
         this.isPaused = false;
