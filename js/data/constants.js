@@ -91,11 +91,11 @@ const CONSTANTS = {
         }
     },
     ARENA: {
-        MAP_WIDTH: 150,
-        MAP_HEIGHT: 100,
-        WAVE_INTERVAL: 15000,
-        INITIAL_MOBS: 5,
-        MOBS_PER_WAVE: 3,
+        MAP_WIDTH: 200,   // 🆕 Было 150
+        MAP_HEIGHT: 150,  // 🆕 Было 100
+        WAVE_INTERVAL: 12000,  // 🆕 Было 15000 (быстрее волны)
+        INITIAL_MOBS: 8,       // 🆕 Было 5
+        MOBS_PER_WAVE: 4,      // 🆕 Было 3
         LEVEL_SCALE_INTERVAL: 3,
         LEVEL_SCALE_POWER: 1.5,
         BAT_BASE_HP: 20,

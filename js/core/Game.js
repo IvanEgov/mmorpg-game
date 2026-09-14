@@ -86,16 +86,18 @@ class Game {
 
     // Создание локации по ID
     createLocation(locationId) {
-        if (this.locations[locationId]) return; // Уже существует
+        if (this.locations[locationId]) return;
 
-        if (locationId.startsWith('epoch_')) {
-            const epochId = locationId.replace('epoch_', '');
-            if (epochId === 'ancient_ruins') {
-                this.locations[locationId] = new AncientRuinsLocation();
-            } else {
-                this.locations[locationId] = new DungeonLocation('dungeon_1');
-            }
-        } else if (locationId === 'arena_survival' || locationId.startsWith('dungeon_')) {
+        // 🆕 Подземелье с боссом
+        if (locationId === 'epoch_dungeon') {
+            this.locations[locationId] = new AncientRuinsLocation();
+        }
+        // 🆕 Арена выживания
+        else if (locationId === 'arena_survival') {
+            this.locations[locationId] = new DungeonLocation('arena_survival');
+        }
+        // Обычные данжи
+        else if (locationId.startsWith('dungeon_')) {
             this.locations[locationId] = new DungeonLocation(locationId);
         }
     }
@@ -119,8 +121,10 @@ class Game {
             this.waveManager.stop();
         }
 
+        // 🆕 Очищаем старые данные при выходе из локации
         if (this.currentLocationId && this.currentLocationId !== locationId) {
             this.network.cleanupKilledEnemies(this.currentLocationId);
+            this.network.cleanupOpenedChests(this.currentLocationId); // 🆕
         }
 
         // Пересоздаём данжи и эпохи каждый раз
@@ -145,7 +149,8 @@ class Game {
 
         document.getElementById('location-name').textContent = this.currentLocation.name;
 
-        if (locationId !== 'city') {
+        // 🆕 Загружаем данные ТОЛЬКО для подземелья (не для арены)
+        if (locationId.startsWith('epoch_dungeon')) {
             this.network.getKilledEnemies(locationId, (killedIds) => {
                 this.removeKilledEnemies(killedIds);
             });
@@ -154,6 +159,7 @@ class Game {
             });
         }
 
+        // 🆕 Запускаем волны ТОЛЬКО для арены выживания
         if (locationId === 'arena_survival') {
             this.startArena();
         }

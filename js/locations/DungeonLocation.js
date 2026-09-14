@@ -2,27 +2,28 @@
     constructor(dungeonId) {
         const names = {
             'dungeon_1': '⚔️ Подземелье',
-            'dungeon_2': '🦇 Арена летучих мышей',
-            'arena_survival': '💀 Арена выживания'
+            'dungeon_2': '🦇 Пещера летучих мышей',
+            'arena_survival': '💀 Арена выживания',
+            'epoch_dungeon': '🏛️ Древнее подземелье',
+            'epoch_arena': '⚔️ Арена выживания'
         };
         super(names[dungeonId] || '⚔️ Данж');
         this.dungeonId = dungeonId;
         this.spawnX = 3 * CONSTANTS.TILE_SIZE;
         this.spawnY = 3 * CONSTANTS.TILE_SIZE;
         this.generateMap();
-        
-        // Для арены выживания мобы не спавнятся сразу — их добавит WaveManager
-        if (dungeonId !== 'arena_survival') {
+
+        // 🆕 Для арены выживания мобы не спавнятся сразу
+        if (dungeonId !== 'arena_survival' && dungeonId !== 'epoch_arena') {
             this.spawnEnemies();
         }
         this.spawnExitPortal();
     }
 
     generateMap() {
-        // Определяем размер карты
-        const isArena = this.dungeonId === 'arena_survival';
-        const mapW = isArena ? CONSTANTS.ARENA.MAP_WIDTH : CONSTANTS.MAP_WIDTH;
-        const mapH = isArena ? CONSTANTS.ARENA.MAP_HEIGHT : CONSTANTS.MAP_HEIGHT;
+        const isArena = this.dungeonId === 'arena_survival' || this.dungeonId === 'epoch_arena';
+        const mapW = isArena ? CONSTANTS.ARENA.MAP_WIDTH : CONSTANTS.LARGE_MAP_WIDTH;
+        const mapH = isArena ? CONSTANTS.ARENA.MAP_HEIGHT : CONSTANTS.LARGE_MAP_HEIGHT;
 
         this.mapWidth = mapW;
         this.mapHeight = mapH;
@@ -30,25 +31,19 @@
         for (let y = 0; y < mapH; y++) {
             this.map[y] = [];
             for (let x = 0; x < mapW; x++) {
-                // Границы - стены
                 if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
                     this.map[y][x] = 7;
-                }
-                // Арена: случайные препятствия-колонны
-                else if (isArena && Math.random() < 0.03 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
+                } else if (isArena && Math.random() < 0.02 && x > 3 && y > 3 && x < mapW - 4 && y < mapH - 4) {
                     this.map[y][x] = 7;
-                }
-                // Обычный данж: препятствия
-                else if (!isArena && ((x === 8 || x === 22) && (y === 5 || y === 15))) {
+                } else if (!isArena && ((x === 8 || x === 22) && (y === 5 || y === 15))) {
                     this.map[y][x] = 7;
-                }
-                // Пол
-                else {
+                } else {
                     this.map[y][x] = 6;
                 }
             }
         }
-        // 🆕 Безопасная зона спавна
+
+        // Безопасная зона спавна
         const spawnX = 3;
         const spawnY = 3;
         for (let y = spawnY - 2; y <= spawnY + 2; y++) {
@@ -59,6 +54,8 @@
             }
         }
     }
+
+  
 
     // Переопределяем isWalkable для больших карт
     isWalkable(x, y) {

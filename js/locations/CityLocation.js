@@ -51,23 +51,23 @@
         // Старейшина (квесты)
         this.entities.push(new NPC(24 * CONSTANTS.TILE_SIZE, 12 * CONSTANTS.TILE_SIZE, 'elder', '👑 Старейшина'));
     }
-
     spawnPortals() {
-        // Портал в первое воплощение (всегда открыт)
+        // 🆕 Портал в подземелье с боссом
         this.entities.push(new Portal(
             Math.floor(CONSTANTS.MAP_WIDTH / 2) * CONSTANTS.TILE_SIZE,
             2 * CONSTANTS.TILE_SIZE,
-            'epoch_ancient_ruins',
-            '🏛️ Древние руины (1-е воплощение)'
+            'epoch_dungeon',
+            '🏛️ Древнее подземелье (с боссом)'
         ));
 
-        // Портал на арену (требует завершения первой эпохи)
+        // 🆕 Портал на арену выживания
         this.entities.push(new Portal(
             2 * CONSTANTS.TILE_SIZE,
             Math.floor(CONSTANTS.MAP_HEIGHT / 2) * CONSTANTS.TILE_SIZE,
-            'epoch_blood_arena',
-            '⚔️ Арена Крови (2-е воплощение)'
+            'arena_survival',
+            '💀 Арена выживания (волны мобов)'
         ));
+    
 
         // Портал в средневековье (требует арены)
         this.entities.push(new Portal(

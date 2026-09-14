@@ -12,6 +12,10 @@ class WaveManager {
         this.playerLevel = playerLevel;
         this.wave = 0;
         this.waveTimer = 0;
+
+        // 🆕 Очищаем старых мобов перед началом волн
+        this.location.entities = this.location.entities.filter(e => !(e instanceof Enemy));
+
         this.spawnWave();
     }
 

@@ -180,4 +180,9 @@
             callback(openedIds);
         });
     }
+    // 🆕 Очистить открытые сундуки при выходе из локации
+    cleanupOpenedChests(locationId) {
+        if (!this.connected) return;
+        this.db.ref('opened_chests/' + locationId).remove();
+    }
 }
