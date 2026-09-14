@@ -1,18 +1,56 @@
 ﻿class AncientRuinsLocation extends EpochLocation {
     constructor() {
-        super('ancient_ruins');
+        super('ancient_ruins'); // 🆕 Это устанавливает this.dungeonId = 'ancient_ruins'
+        console.log('✅ AncientRuinsLocation загружен! dungeonId: ' + this.dungeonId);
         this.name = '🏛️ Древние руины';
         this.generateMap();
         this.spawnTreasures();
-        this.spawnSlimes();  // 🆕
+        this.spawnSlimes();
         this.spawnBoss();
         this.spawnTraps();
         this.spawnExitPortal();
     }
 
-    // 🆕 Спавн слаймов для квеста
+    generateMap() {
+        const mapW = CONSTANTS.LARGE_MAP_WIDTH;
+        const mapH = CONSTANTS.LARGE_MAP_HEIGHT;
+        this.mapWidth = mapW;
+        this.mapHeight = mapH;
+
+        // 🆕 ФИКСИРОВАННЫЙ seed для карты (одинаковый у всех игроков)
+        const mapRng = new SeededRandom('ancient_ruins_map_v1');
+
+        for (let y = 0; y < mapH; y++) {
+            this.map[y] = [];
+            for (let x = 0; x < mapW; x++) {
+                if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
+                    this.map[y][x] = 7;
+                } else if (mapRng.next() < 0.25) { // 🆕 Используем seeded random
+                    this.map[y][x] = 7;
+                } else {
+                    this.map[y][x] = 6;
+                }
+            }
+        }
+
+        // Безопасная стартовая зона
+        const spawnX = 3;
+        const spawnY = 3;
+        const safeRadius = 3;
+
+        for (let y = spawnY - safeRadius; y <= spawnY + safeRadius; y++) {
+            for (let x = spawnX - safeRadius; x <= spawnX + safeRadius; x++) {
+                if (x > 0 && y > 0 && x < mapW - 1 && y < mapH - 1) {
+                    this.map[y][x] = 6;
+                }
+            }
+        }
+
+        console.log('✅ Карта ' + mapW + 'x' + mapH + ' создана (детерминированно). Стартовая зона: ' + spawnX + ',' + spawnY);
+    }
+
     spawnSlimes() {
-        // 🆕 ФИКСИРОВАННЫЙ seed для одинакового спавна у всех игроков
+        // 🆕 ФИКСИРОВАННЫЙ seed для мобов (одинаковый у всех игроков)
         const rng = new SeededRandom('ancient_ruins_slimes_v1');
         const slimeCount = 15;
         let spawned = 0;
@@ -48,43 +86,9 @@
             }
         }
 
-        console.log('🟢 Заспавнено ' + spawned + ' слаймов из ' + slimeCount);
+        console.log('🟢 Заспавнено ' + spawned + ' слаймов из ' + slimeCount + ' (детерминированно)');
     }
 
-    generateMap() {
-        const mapW = CONSTANTS.LARGE_MAP_WIDTH;  // 🆕 150
-        const mapH = CONSTANTS.LARGE_MAP_HEIGHT; // 🆕 100
-        this.mapWidth = mapW;
-        this.mapHeight = mapH;
-
-        for (let y = 0; y < mapH; y++) {
-            this.map[y] = [];
-            for (let x = 0; x < mapW; x++) {
-                if (x === 0 || y === 0 || x === mapW - 1 || y === mapH - 1) {
-                    this.map[y][x] = 7;
-                } else if (Math.random() < 0.25) {
-                    this.map[y][x] = 7;
-                } else {
-                    this.map[y][x] = 6;
-                }
-            }
-        }
-
-        // Безопасная стартовая зона
-        const spawnX = 3;
-        const spawnY = 3;
-        const safeRadius = 3;
-
-        for (let y = spawnY - safeRadius; y <= spawnY + safeRadius; y++) {
-            for (let x = spawnX - safeRadius; x <= spawnX + safeRadius; x++) {
-                if (x > 0 && y > 0 && x < mapW - 1 && y < mapH - 1) {
-                    this.map[y][x] = 6;
-                }
-            }
-        }
-
-        console.log(`✅ Карта ${mapW}x${mapH} создана. Стартовая зона: ${spawnX},${spawnY}`);
-    }
 
     spawnTreasures() {
         const rng = new SeededRandom(this.dungeonId + '_treasures');

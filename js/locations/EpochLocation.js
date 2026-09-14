@@ -1,12 +1,11 @@
-class EpochLocation extends DungeonLocation {
+п»їclass EpochLocation extends DungeonLocation {
     constructor(epochId) {
-        super('epoch_' + epochId);
+        super('epoch_' + epochId); // рџ†• Р­С‚Рѕ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ this.dungeonId
         this.epochId = epochId;
         this.epochData = EPOCHS[epochId];
     }
 
     completeEpoch() {
-        // Вызывается когда игрок завершил эпоху
         window.gameInstance.player.completeEpoch(this.epochId);
         window.gameInstance.saveGame();
     }
