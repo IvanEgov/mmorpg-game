@@ -52,16 +52,14 @@ class Enemy {
         const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
         const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
 
+        // 🆕 Движение с проверкой проходимости
         if (distance < this.detectionRange && distance > this.minDistance) {
             const moveX = (dx / distance) * this.speed;
             const moveY = (dy / distance) * this.speed;
             let newX = this.x + moveX;
             let newY = this.y + moveY;
 
-            // 🆕 Wrap-around для врагов
-            const mapW = (location.mapWidth || CONSTANTS.MAP_WIDTH) * CONSTANTS.TILE_SIZE;
-            const mapH = (location.mapHeight || CONSTANTS.MAP_HEIGHT) * CONSTANTS.TILE_SIZE;
-
+            // Wrap-around
             if (newX < 0) newX = mapW - CONSTANTS.TILE_SIZE;
             if (newX >= mapW) newX = 0;
             if (newY < 0) newY = mapH - CONSTANTS.TILE_SIZE;
@@ -70,11 +68,14 @@ class Enemy {
             const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
             const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
 
-            if (newX >= 0 && newY >= 0 && newX < mapW && newY < mapH &&
-                tileX >= 0 && tileY >= 0 && tileX < mapW / CONSTANTS.TILE_SIZE && tileY < mapH / CONSTANTS.TILE_SIZE) {
+            // 🆕 Проверяем, что новая позиция проходима
+            if (tileX >= 0 && tileY >= 0 && tileX < mapW / CONSTANTS.TILE_SIZE && tileY < mapH / CONSTANTS.TILE_SIZE) {
                 if (location.map[tileY] && location.map[tileY][tileX] !== 7 && location.map[tileY][tileX] !== 1) {
                     this.x = newX;
                     this.y = newY;
+                } else {
+                    // 🆕 Если упёрлись в стену — пробуем обойти
+                    this.tryAvoidObstacle(dx, dy, location, mapW, mapH);
                 }
             }
         }
@@ -95,6 +96,34 @@ class Enemy {
         }
 
         return null;
+    }
+
+    // 🆕 Метод обхода препятствий
+    tryAvoidObstacle(dx, dy, location, mapW, mapH) {
+        // Пробуем двигаться перпендикулярно
+        const perpendicularX = -dy;
+        const perpendicularY = dx;
+
+        const moveX = (perpendicularX / Math.hypot(perpendicularX, perpendicularY)) * this.speed;
+        const moveY = (perpendicularY / Math.hypot(perpendicularX, perpendicularY)) * this.speed;
+
+        let newX = this.x + moveX;
+        let newY = this.y + moveY;
+
+        if (newX < 0) newX = mapW - CONSTANTS.TILE_SIZE;
+        if (newX >= mapW) newX = 0;
+        if (newY < 0) newY = mapH - CONSTANTS.TILE_SIZE;
+        if (newY >= mapH) newY = 0;
+
+        const tileX = Math.floor((newX + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
+        const tileY = Math.floor((newY + CONSTANTS.TILE_SIZE / 2) / CONSTANTS.TILE_SIZE);
+
+        if (tileX >= 0 && tileY >= 0 && tileX < mapW / CONSTANTS.TILE_SIZE && tileY < mapH / CONSTANTS.TILE_SIZE) {
+            if (location.map[tileY] && location.map[tileY][tileX] !== 7 && location.map[tileY][tileX] !== 1) {
+                this.x = newX;
+                this.y = newY;
+            }
+        }
     }
 
     takeDamage(amount) {

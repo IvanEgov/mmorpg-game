@@ -435,15 +435,16 @@ class Game {
     markOpenedChests(openedIds) {
         if (!openedIds || openedIds.length === 0) return;
 
-        // 🆕 Удаляем открытые сундуки из локации
-        this.currentLocation.entities = this.currentLocation.entities.filter(entity => {
-            if (entity instanceof TreasureChest && openedIds.includes(entity.uniqueId)) {
-                return false; // Удаляем сундук
+        // 🆕 Помечаем сундуки как открытые, но НЕ удаляем
+        for (const entity of this.currentLocation.entities) {
+            if (entity instanceof TreasureChest) {
+                if (openedIds.includes(entity.uniqueId)) {
+                    entity.isOpen = true; // Просто помечаем как открытый
+                }
             }
-            return true;
-        });
+        }
 
-        console.log(`📦 Удалено ${openedIds.length} открытых сундуков`);
+        console.log('📦 Помечено ' + openedIds.length + ' открытых сундуков');
     }
 
     update(deltaTime) {
@@ -508,6 +509,7 @@ class Game {
         for (const entity of this.currentLocation.entities) {
             if (entity instanceof Enemy && this.camera.isEntityVisible(entity.x, entity.y)) {
                 if (entity instanceof ArenaBat) entity.render(this.ctx);
+                else if (entity instanceof Boss) entity.render(this.ctx);
                 else this.enemyRenderer.render(this.ctx, entity);
             }
         }
@@ -520,11 +522,12 @@ class Game {
 
         this.playerRenderer.render(this.ctx, this.player);
         this.renderDamageNumbers();
-        // 🆕 HUD босса (рисуется поверх камеры)
+        this.camera.restore(this.ctx);
+
+        // 🆕 HUD рисуется ПОСЛЕ camera.restore() — в экранных координатах
         if (this.currentLocation.boss && !this.currentLocation.boss.isDead) {
             this.renderBossHUD(this.currentLocation.boss);
         }
-        this.camera.restore(this.ctx);
 
         if (this.currentLocationId === 'arena_survival' && this.waveManager.active) {
             this.renderArenaHUD();

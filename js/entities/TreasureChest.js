@@ -51,6 +51,14 @@
         ctx.font = '24px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.isOpen ? '📭' : '📦', this.x + CONSTANTS.TILE_SIZE / 2, this.y + CONSTANTS.TILE_SIZE / 2);
+
+        // 🆕 Открытые сундуки показываются как пустые
+        const icon = this.isOpen ? '📭' : '📦';
+        ctx.fillText(icon, this.x + CONSTANTS.TILE_SIZE / 2, this.y + CONSTANTS.TILE_SIZE / 2);
+
+        // 🆕 Если сундук открыт — делаем его полупрозрачным
+        if (this.isOpen) {
+            ctx.globalAlpha = 0.5;
+        }
     }
 }
