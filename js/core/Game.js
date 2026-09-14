@@ -118,13 +118,11 @@ class Game {
             this.waveManager.stop();
         }
 
-        // 🆕 Очищаем старые данные при выходе из локации
         if (this.currentLocationId && this.currentLocationId !== locationId) {
             this.network.cleanupKilledEnemies(this.currentLocationId);
-            this.network.cleanupOpenedChests(this.currentLocationId); // 🆕
+            this.network.cleanupOpenedChests(this.currentLocationId);
         }
 
-        // Пересоздаём данжи и эпохи каждый раз
         if (locationId !== 'city') {
             delete this.locations[locationId];
             this.createLocation(locationId);
@@ -146,22 +144,44 @@ class Game {
 
         document.getElementById('location-name').textContent = this.currentLocation.name;
 
-        // 🆕 Загружаем данные ТОЛЬКО для подземелья (не для арены)
-        if (locationId.startsWith('epoch_dungeon')) {
+        // 🆕 Загружаем данные синхронизации для всех локаций кроме города
+        if (locationId !== 'city') {
+            // Загружаем убитых мобов
             this.network.getKilledEnemies(locationId, (killedIds) => {
                 this.removeKilledEnemies(killedIds);
             });
+
+            // Загружаем открытые сундуки
             this.network.getOpenedChests(locationId, (openedIds) => {
                 this.markOpenedChests(openedIds);
             });
+
+            // 🆕 Подписываемся на обновления в реальном времени
+            this.network.subscribeToLocationUpdates(locationId, (updates) => {
+                this.applyLocationUpdates(updates);
+            });
         }
 
-        // 🆕 Запускаем волны ТОЛЬКО для арены выживания
         if (locationId === 'arena_survival') {
             this.startArena();
         }
 
         this.saveGame();
+    }
+
+    // 🆕 Применяем обновления из Firebase
+    applyLocationUpdates(updates) {
+        if (!updates) return;
+
+        // Удаляем убитых мобов
+        if (updates.killedEnemies) {
+            this.removeKilledEnemies(updates.killedEnemies);
+        }
+
+        // Помечаем открытые сундуки
+        if (updates.openedChests) {
+            this.markOpenedChests(updates.openedChests);
+        }
     }
 
     startArena() {
@@ -325,12 +345,10 @@ class Game {
             if (result.killed) {
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
+
+                // 🆕 Синхронизируем убийство с другими игроками
                 this.network.reportEnemyKilled(result.enemy.uniqueId, this.currentLocationId);
 
-                // 🆕 Если убит босс — разблокируем следующую эпоху
-                if (result.enemy instanceof Boss && result.enemy.unlocksEpoch) {
-                    this.handleBossDefeat(result.enemy);
-                }
                 const loot = result.enemy.getLoot();
                 loot.forEach(itemId => {
                     this.player.addItem(itemId);
@@ -343,6 +361,7 @@ class Game {
                     }
                 });
 
+                // 🆕 Удаляем моба локально (он также удалится у других через подписку)
                 setTimeout(() => {
                     this.currentLocation.entities = this.currentLocation.entities.filter(e => e !== result.enemy);
                 }, 500);

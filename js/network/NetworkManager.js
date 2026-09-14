@@ -145,7 +145,24 @@
         // Используем update вместо set для лучшей производительности
         this.db.ref('players/' + this.playerId).update(data);
     }
+    // 🆕 Подписка на обновления локации в реальном времени
+    subscribeToLocationUpdates(locationId, callback) {
+        if (!this.connected) return;
 
+        // Подписываемся на убитых мобов
+        this.db.ref('killed_enemies/' + locationId).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const killedIds = data ? Object.keys(data) : [];
+            callback({ killedEnemies: killedIds });
+        });
+
+        // Подписываемся на открытые сундуки
+        this.db.ref('opened_chests/' + locationId).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const openedIds = data ? Object.keys(data) : [];
+            callback({ openedChests: openedIds });
+        });
+    }
     disconnect() {
         if (!this.connected) return;
         this.db.ref('players/' + this.playerId).remove();

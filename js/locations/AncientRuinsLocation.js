@@ -12,7 +12,8 @@
 
     // 🆕 Спавн слаймов для квеста
     spawnSlimes() {
-        const rng = new SeededRandom(this.dungeonId + '_slimes');
+        // 🆕 Используем фиксированный seed для одинакового спавна у всех
+        const rng = new SeededRandom('ancient_ruins_slimes_fixed');
         const slimeCount = 15;
         let spawned = 0;
 
