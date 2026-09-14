@@ -373,11 +373,16 @@ class Game {
                 this.player.gainXp(result.enemy.xpReward);
                 this.player.gold += result.enemy.goldReward;
 
-                // 🆕 Синхронизируем убийство (работает и для боссов)
-                this.network.reportEnemyKilled(result.enemy.uniqueId, this.currentLocationId);
-                console.log('💀 Убит: ' + result.enemy.uniqueId);
+                // 🆕 Синхронизируем убийство (включая босса)
+                const enemyId = result.enemy.uniqueId;
+                console.log('💀 Убит: ' + enemyId);
+                this.network.reportEnemyKilled(enemyId, this.currentLocationId);
 
-           
+                // 🆕 Если убит босс — обрабатываем отдельно
+                if (result.enemy instanceof Boss) {
+                    this.handleBossDefeat(result.enemy);
+                }
+
                 const loot = result.enemy.getLoot();
                 loot.forEach(itemId => {
                     this.player.addItem(itemId);
@@ -390,7 +395,6 @@ class Game {
                     }
                 });
 
-                // 🆕 Удаляем моба локально (он также удалится у других через подписку)
                 setTimeout(() => {
                     this.currentLocation.entities = this.currentLocation.entities.filter(e => e !== result.enemy);
                 }, 500);
@@ -482,15 +486,24 @@ class Game {
         const beforeCount = this.currentLocation.entities.length;
 
         this.currentLocation.entities = this.currentLocation.entities.filter(entity => {
-            if (entity instanceof Enemy && killedIds.includes(entity.uniqueId)) {
-                console.log('🗑️ Удаляем убитого моба: ' + entity.uniqueId);
-                return false;
+            if (entity instanceof Enemy) {
+                // 🆕 Проверяем и боссов тоже
+                if (killedIds.includes(entity.uniqueId)) {
+                    console.log('🗑️ Удаляем: ' + entity.uniqueId);
+                    // Если это босс — очищаем ссылку
+                    if (entity instanceof Boss && this.currentLocation.boss === entity) {
+                        this.currentLocation.boss = null;
+                    }
+                    return false;
+                }
             }
             return true;
         });
 
         const removedCount = beforeCount - this.currentLocation.entities.length;
-        console.log('🗑️ Удалено ' + removedCount + ' убитых мобов из ' + killedIds.length);
+        if (removedCount > 0) {
+            console.log('🗑️ Удалено ' + removedCount + ' мобов');
+        }
     }
 
     markOpenedChests(openedIds) {

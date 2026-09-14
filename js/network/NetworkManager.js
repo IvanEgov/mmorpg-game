@@ -31,7 +31,7 @@
             killedBy: this.playerName,
             timestamp: Date.now()
         });
-        console.log(`💀 Моб ${enemyId} убит, синхронизируем...`);
+        console.log('💀 Отправлено в Firebase: killed_enemies/' + key);
     }
 
     // 🆕 Получить список убитых мобов для локации

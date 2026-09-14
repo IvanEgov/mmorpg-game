@@ -119,7 +119,6 @@
         const centerX = Math.floor(this.mapWidth / 2) * CONSTANTS.TILE_SIZE;
         const centerY = Math.floor(this.mapHeight / 2) * CONSTANTS.TILE_SIZE;
 
-        // Очищаем область вокруг босса
         const bossTileX = Math.floor(this.mapWidth / 2);
         const bossTileY = Math.floor(this.mapHeight / 2);
         for (let y = bossTileY - 4; y <= bossTileY + 4; y++) {
@@ -131,13 +130,22 @@
         }
 
         const boss = new Boss(centerX, centerY, bossData);
-        // 🆕 Уникальный ID босса (одинаковый у всех игроков)
-        // 🆕 Фиксированный uniqueId (должен совпадать с тем, что в конструкторе Boss)
-        boss.uniqueId = 'boss_ruins_guardian_' + Math.floor(centerX) + '_' + Math.floor(centerY);
+        boss.uniqueId = 'boss_ruins_guardian';
         this.entities.push(boss);
         this.boss = boss;
 
-        console.log('👹 Босс "' + bossData.name + '" заспавнен: ' + boss.uniqueId);
+        console.log('👹 Босс заспавнен: ' + boss.uniqueId);
+
+        // 🆕 Проверяем, не убит ли босс другими игроками
+        if (window.gameInstance && window.gameInstance.network.connected) {
+            window.gameInstance.network.getKilledEnemies('epoch_dungeon', (killedIds) => {
+                if (killedIds.includes('boss_ruins_guardian')) {
+                    console.log('👹 Босс уже убит другим игроком, удаляем');
+                    this.entities = this.entities.filter(e => e !== boss);
+                    this.boss = null;
+                }
+            });
+        }
     }
 
     spawnTraps() {
