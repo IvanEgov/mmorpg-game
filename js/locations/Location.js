@@ -7,14 +7,15 @@
         this.mapCanvasDirty = true; // 🆕 Флаг перерисовки
     }
 
+    // 🆕 update НЕ использует camera — только player
     update(player) {
-        // 🆕 Рендерим сущности кроме Enemy (их рендерит Game)
         for (const entity of this.entities) {
-            if (entity.render && !(entity instanceof Enemy) && camera.isEntityVisible(entity.x, entity.y)) {
-                entity.render(ctx);
+            if (entity.update) {
+                entity.update(player, this);
             }
         }
     }
+
 
     render(ctx, camera) {
         const mapW = this.mapWidth || CONSTANTS.MAP_WIDTH;
